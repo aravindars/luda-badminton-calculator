@@ -73,6 +73,7 @@
         .no-card { background: #f8fafc; border: 1px dashed #cbd5e1; }
         .validation-box { margin-top: 15px; padding: 12px; border-radius: 12px; text-align: center; font-size: 0.75rem; font-weight: 600; }
         .valid-ok { background: #d1fae5; color: var(--success); }
+        .valid-err { background: #fee2e2; color: var(--error); }
         .footer { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: 15px; }
     </style>
 </head>
@@ -80,12 +81,12 @@
 
 <div class="container">
     <h1>🏸 Luda's Calc</h1>
-    <div class="subtitle">Smart Court Splitter</div>
+    <div class="subtitle">Precision Group Splitter</div>
     
-    <div class="section-label">Club Costs</div>
+    <div class="section-label">Club Transaction</div>
     <div class="input-grid">
         <div class="input-group"><label>Full Fee</label><input type="number" id="fullFee" value="600"></div>
-        <div class="input-group"><label>Actual Swipes</label><input type="number" id="actualSwipes" value="22"></div>
+        <div class="input-group"><label>Cash Paid</label><input type="number" id="cashPaid" value="270"></div>
     </div>
 
     <div class="input-grid">
@@ -100,7 +101,12 @@
                 </select>
             </div>
         </div>
+        <div class="input-group"><label>Actual Swipes</label><input type="number" id="actualSwipes" value="22"></div>
+    </div>
+
+    <div class="input-grid">
         <div class="input-group"><label>Shuttles</label><input type="number" id="shuttleCost" value="75"></div>
+        <div class="input-group" style="visibility:hidden"></div>
     </div>
 
     <div class="section-label">Player Counts</div>
@@ -117,13 +123,14 @@
         <div class="card"><span class="label-text">Light</span><span id="resLight" class="price-text"></span></div>
         <div class="card no-card"><span class="label-text">No Card</span><span id="resNoCard" class="price-text"></span></div>
         <div id="validationBox" class="validation-box"></div>
-        <div class="footer">Designed for Luda</div>
+        <div class="footer">Handcrafted for Luda</div>
     </div>
 </div>
 
 <script>
     function calculate() {
         const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
+        const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
         const swipes = parseInt(document.getElementById('actualSwipes').value) || 0;
         const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
         const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
@@ -135,30 +142,41 @@
         const totalPlayers = cPlus + cLight + cNone;
         if (totalPlayers === 0) return;
 
-        // Target: What Luda actually pays the club based on real swipes
-        const totalToRecover = (fullFee - (swipes * 15)) + shuttles;
+        // The goal: Recover what was actually paid out of pocket
+        const totalToRecover = cashPaid + shuttles;
 
-        // Discount gaps: Plus (1 per hour), Light (fixed 1)
+        // Plus credit scales with hours (1 swipe per full hour)
         const plusDisc = Math.max(1, Math.floor(hours)) * 15.0;
         const lightDisc = 15.0;
 
-        // Standard math: Recover = (Base * Players) - Total Discounts Applied
+        // Logic: Standard Share = (Actual Cash + Value of all expected Discounts) / Players
         const totalDiscounts = (cPlus * plusDisc) + (cLight * lightDisc);
-        const basePrice = (totalToRecover + totalDiscounts) / totalPlayers;
+        const standardShare = (totalToRecover + totalDiscounts) / totalPlayers;
 
-        const cp = Math.max(0, basePrice - plusDisc);
-        const cl = Math.max(0, basePrice - 15.0);
-        const cn = basePrice;
+        const cp = Math.max(0, standardShare - plusDisc);
+        const cl = Math.max(0, standardShare - 15.0);
+        const cn = standardShare;
 
         document.getElementById('plusLabel').innerText = `PLUS (${plusDisc} PLN off)`;
         document.getElementById('resPlus').innerText = cp.toFixed(2) + " PLN";
         document.getElementById('resLight').innerText = cl.toFixed(2) + " PLN";
         document.getElementById('resNoCard').innerText = cn.toFixed(2) + " PLN";
 
-        const checkSum = (cp * cPlus) + (cl * cLight) + (cn * cNone);
+        // Validation check: Does (Cash Paid + Swipes*15) = Full Fee?
+        const theoreticalFullFee = cashPaid + (swipes * 15);
+        const diff = Math.abs(theoreticalFullFee - fullFee);
         const vBox = document.getElementById('validationBox');
-        vBox.className = "validation-box valid-ok";
-        vBox.innerText = `✅ Verified: Recovery total ${checkSum.toFixed(2)} PLN`;
+        
+        const recoverySum = (cp * cPlus) + (cl * cLight) + (cn * cNone);
+
+        if (diff < 0.1) {
+            vBox.className = "validation-box valid-ok";
+            vBox.innerText = `✅ Verified: Recovery total ${recoverySum.toFixed(2)} PLN`;
+        } else {
+            vBox.className = "validation-box valid-err";
+            vBox.innerText = `⚠️ Note: Club payment mismatch. Swipes + Cash = ${theoreticalFullFee} vs Full Fee ${fullFee}.`;
+        }
+        
         document.getElementById('results').style.display = 'block';
     }
 </script>
