@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Badminton Splitter</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2851/2851574.png">
+
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 20px; display: flex; justify-content: center;
+        }
+        .container { background: white; width: 100%; max-width: 400px; padding: 24px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 24px; color: #0f172a; }
+        .input-group { margin-bottom: 16px; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; }
+        input { 
+            width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; 
+            font-size: 1rem; box-sizing: border-box; outline: none; transition: border 0.2s;
+        }
+        input:focus { border-color: var(--primary); ring: 2px var(--primary); }
+        button { 
+            width: 100%; padding: 14px; background: var(--primary); color: white; 
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; 
+            cursor: pointer; margin-top: 12px; transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.8; }
+        #results { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: none; }
+        .card { 
+            background: #eff6ff; padding: 12px; border-radius: 8px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .label-text { font-size: 0.9rem; color: #1e40af; }
+        .price-text { font-weight: 700; font-size: 1.1rem; color: #1e40af; }
+        .summary { text-align: center; font-size: 0.8rem; color: #64748b; margin-top: 15px; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏸 Court Splitter</h1>
+    
+    <div class="input-group">
+        <label>Cash Paid to Club (PLN)</label>
+        <input type="number" id="cashPaid" placeholder="270" value="270">
+    </div>
+
+    <div class="input-group">
+        <label>Shuttle Cost (PLN)</label>
+        <input type="number" id="shuttleCost" placeholder="75" value="75">
+    </div>
+
+    <div class="input-group">
+        <label>Total Players</label>
+        <input type="number" id="totalPlayers" placeholder="15" value="15">
+    </div>
+
+    <div class="input-group">
+        <label>Successful Swipes Recorded</label>
+        <input type="number" id="totalSwipes" placeholder="22" value="22">
+    </div>
+
+    <button onclick="calculate()">Calculate Share</button>
+
+    <div id="results">
+        <div class="card">
+            <span class="label-text">Plus (2 Swipes):</span>
+            <span id="resPlus" class="price-text"></span>
+        </div>
+        <div class="card">
+            <span class="label-text">Normal (1 Swipe):</span>
+            <span id="resNormal" class="price-text"></span>
+        </div>
+        <div class="card" style="background: #f1f5f9;">
+            <span class="label-text" style="color: #475569;">No Card / Blocked:</span>
+            <span id="resNoCard" class="price-text" style="color: #475569;"></span>
+        </div>
+        <div class="summary">
+            Total to collect: <span id="resTotal"></span><br>
+            Calculated via Fair Credit Logic
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        const cash = parseFloat(document.getElementById('cashPaid').value) || 0;
+        const shuttle = parseFloat(document.getElementById('shuttleCost').value) || 0;
+        const players = parseInt(document.getElementById('totalPlayers').value) || 1;
+        const swipes = parseInt(document.getElementById('totalSwipes').value) || 0;
+        const swipeValue = 15.0;
+
+        const totalToCollect = cash + shuttle;
+        
+        // Fair Cost Logic
+        const trueCostPerPerson = (totalToCollect + (swipes * swipeValue)) / players;
+
+        const plusCost = trueCostPerPerson - (2 * swipeValue);
+        const normalCost = trueCostPerPerson - (1 * swipeValue);
+        const noCardCost = trueCostPerPerson;
+
+        document.getElementById('resPlus').innerText = plusCost.toFixed(2) + " PLN";
+        document.getElementById('resNormal').innerText = normalCost.toFixed(2) + " PLN";
+        document.getElementById('resNoCard').innerText = noCardCost.toFixed(2) + " PLN";
+        document.getElementById('resTotal').innerText = totalToCollect.toFixed(2) + " PLN";
+        
+        document.getElementById('results').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
