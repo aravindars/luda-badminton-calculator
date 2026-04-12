@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LudaCalc">
-    <meta name="mobile-web-app-capable" content="yes">
     
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2851/2851574.png">
 
@@ -23,83 +22,89 @@
         body { 
             font-family: -apple-system, system-ui, sans-serif; 
             background: linear-gradient(135deg, #e0e7ff 0%, #fae8ff 100%);
-            margin: 0; padding: 20px; 
+            margin: 0; padding: 15px; 
             display: flex; justify-content: center; align-items: center;
-            min-height: 100vh;
-            color: var(--text);
+            min-height: 100vh; color: var(--text);
         }
 
         .container { 
             background: var(--glass);
             backdrop-filter: blur(10px);
             width: 100%; max-width: 380px; 
-            padding: 30px; border-radius: 24px; 
+            padding: 25px; border-radius: 24px; 
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
             border: 1px solid rgba(255,255,255,0.5);
+            box-sizing: border-box;
         }
 
-        h1 { font-size: 1.75rem; text-align: center; margin: 0; color: #4338ca; }
-        .subtitle { text-align: center; font-size: 0.85rem; color: #6366f1; margin-bottom: 25px; font-weight: 500; }
+        h1 { font-size: 1.6rem; text-align: center; margin: 0; color: #4338ca; }
+        .subtitle { text-align: center; font-size: 0.8rem; color: #6366f1; margin-bottom: 20px; font-weight: 500; }
 
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .input-group { margin-bottom: 15px; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .input-group { margin-bottom: 12px; }
         
-        label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; color: #475569; text-transform: uppercase; }
+        label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; color: #475569; text-transform: uppercase; }
         
         input { 
-            width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; 
-            font-size: 1rem; box-sizing: border-box; outline: none;
+            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; 
+            font-size: 0.95rem; box-sizing: border-box; outline: none;
             background: rgba(255,255,255,0.8);
         }
 
         button { 
-            width: 100%; padding: 16px; 
+            width: 100%; padding: 14px; 
             background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white; border: none; border-radius: 14px; 
-            font-size: 1.1rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            color: white; border: none; border-radius: 12px; 
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+            margin-top: 10px;
         }
 
-        #results { margin-top: 25px; display: none; }
+        #results { margin-top: 20px; display: none; }
 
         .card { 
-            background: white; padding: 16px; border-radius: 16px; margin-bottom: 10px;
+            background: white; padding: 12px 16px; border-radius: 14px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
             border: 1px solid #f1f5f9;
         }
 
-        .label-text { font-size: 0.9rem; font-weight: 600; color: #64748b; }
-        .price-text { font-weight: 800; font-size: 1.25rem; color: #4338ca; }
+        .label-text { font-size: 0.85rem; font-weight: 600; color: #64748b; }
+        .price-text { font-weight: 800; font-size: 1.15rem; color: #4338ca; }
         
         .no-card { background: #f8fafc; border: 1px dashed #cbd5e1; }
-
-        .footer { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 20px; font-weight: 500; }
+        .footer { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>🏸 Luda's Calc</h1>
-    <div class="subtitle">Badminton Group Splitter</div>
+    <div class="subtitle">Multi-Hour Group Splitter</div>
     
     <div class="input-group">
-        <label>Court Cash (PLN)</label>
-        <input type="number" id="cashPaid" value="270">
-    </div>
-
-    <div class="input-group">
-        <label>Shuttle Cost (PLN)</label>
-        <input type="number" id="shuttleCost" value="75">
+        <label>Full Court Fee (Before Swipes)</label>
+        <input type="number" id="fullCourtFee" value="600">
     </div>
 
     <div class="input-grid">
         <div>
-            <label>Players</label>
+            <label>Hours</label>
+            <input type="number" id="sessionHours" value="2" step="0.5">
+        </div>
+        <div>
+            <label>Shuttle Cost</label>
+            <input type="number" id="shuttleCost" value="75">
+        </div>
+    </div>
+
+    <div class="input-grid">
+        <div>
+            <label>Total Players</label>
             <input type="number" id="totalPlayers" value="15">
         </div>
         <div>
-            <label>Swipes</label>
-            <input type="number" id="totalSwipes" value="22">
+            <label>Actual Swipes</label>
+            <input type="number" id="actualSwipes" value="22">
         </div>
     </div>
 
@@ -107,7 +112,7 @@
 
     <div id="results">
         <div class="card">
-            <span class="label-text">PLUS (30 PLN off)</span>
+            <span class="label-text" id="plusLabel">PLUS (30 PLN off)</span>
             <span id="resPlus" class="price-text"></span>
         </div>
         <div class="card">
@@ -119,33 +124,41 @@
             <span id="resNoCard" class="price-text"></span>
         </div>
         <div class="footer">
-            Total to Collect: <span id="resTotal"></span><br>
-            Handcrafted for Luda
+            Cash to collect: <span id="actualCash"></span> PLN<br>
+            Managed by Luda
         </div>
     </div>
 </div>
 
 <script>
     function calculate() {
-        const cash = parseFloat(document.getElementById('cashPaid').value) || 0;
-        const shuttle = parseFloat(document.getElementById('shuttleCost').value) || 0;
+        const fullFee = parseFloat(document.getElementById('fullCourtFee').value) || 0;
+        const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
+        const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
         const players = parseInt(document.getElementById('totalPlayers').value) || 1;
-        const swipes = parseInt(document.getElementById('totalSwipes').value) || 0;
-        const swipeValue = 15.0;
-
-        const totalToCollect = cash + shuttle;
+        const actualSwipes = parseInt(document.getElementById('actualSwipes').value) || 0;
         
-        // Exact logic (no forced rounding)
-        const trueCostPerPerson = (totalToCollect + (swipes * swipeValue)) / players;
+        const swipeValue = 15.0;
+        const discountTotal = actualSwipes * swipeValue;
+        const cashToCollect = (fullFee - discountTotal) + shuttles;
 
-        const plusCost = Math.max(0, trueCostPerPerson - 30);
-        const lightCost = Math.max(0, trueCostPerPerson - 15);
-        const noCardCost = trueCostPerPerson;
+        // Base cost if no cards existed
+        const baseCostPerPerson = (fullFee + shuttles) / players;
 
+        // Plus cards get 1 swipe per full hour (rounded down, min 1)
+        const plusSwipeCount = Math.max(1, Math.floor(hours));
+        const plusDiscount = plusSwipeCount * swipeValue;
+
+        const plusCost = Math.max(0, baseCostPerPerson - plusDiscount);
+        const lightCost = Math.max(0, baseCostPerPerson - 15);
+        const noCardCost = baseCostPerPerson;
+
+        // UI Updates
+        document.getElementById('plusLabel').innerText = `PLUS (${plusDiscount} PLN off)`;
         document.getElementById('resPlus').innerText = plusCost.toFixed(2) + " PLN";
         document.getElementById('resLight').innerText = lightCost.toFixed(2) + " PLN";
         document.getElementById('resNoCard').innerText = noCardCost.toFixed(2) + " PLN";
-        document.getElementById('resTotal').innerText = totalToCollect.toFixed(2) + " PLN";
+        document.getElementById('actualCash').innerText = cashToCollect.toFixed(2);
         
         document.getElementById('results').style.display = 'block';
     }
