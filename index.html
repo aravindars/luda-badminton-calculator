@@ -17,6 +17,8 @@
             --secondary: #a855f7;
             --glass: rgba(255, 255, 255, 0.9);
             --text: #0f172a;
+            --success: #10b981;
+            --error: #ef4444;
         }
 
         body { 
@@ -30,7 +32,7 @@
         .container { 
             background: var(--glass);
             backdrop-filter: blur(10px);
-            width: 100%; max-width: 380px; 
+            width: 100%; max-width: 400px; 
             padding: 25px; border-radius: 24px; 
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
             border: 1px solid rgba(255,255,255,0.5);
@@ -45,33 +47,49 @@
         
         label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; color: #475569; text-transform: uppercase; }
         
-        input { 
-            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; 
-            font-size: 0.95rem; box-sizing: border-box; outline: none;
+        input, select { 
+            width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; 
+            font-size: 1rem; box-sizing: border-box; outline: none;
             background: rgba(255,255,255,0.8);
+            appearance: none; /* Removes default styling for clean look */
+        }
+
+        /* Custom dropdown arrow */
+        .select-wrapper { position: relative; }
+        .select-wrapper::after {
+            content: "▼"; font-size: 0.7rem; color: #6366f1;
+            position: absolute; right: 12px; top: 40%; pointer-events: none;
         }
 
         button { 
-            width: 100%; padding: 14px; 
+            width: 100%; padding: 16px; 
             background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white; border: none; border-radius: 12px; 
-            font-size: 1rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+            color: white; border: none; border-radius: 14px; 
+            font-size: 1.1rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
             margin-top: 10px;
         }
 
         #results { margin-top: 20px; display: none; }
 
         .card { 
-            background: white; padding: 12px 16px; border-radius: 14px; margin-bottom: 8px;
+            background: white; padding: 14px 16px; border-radius: 16px; margin-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
             border: 1px solid #f1f5f9;
         }
 
         .label-text { font-size: 0.85rem; font-weight: 600; color: #64748b; }
-        .price-text { font-weight: 800; font-size: 1.15rem; color: #4338ca; }
+        .price-text { font-weight: 800; font-size: 1.2rem; color: #4338ca; }
         
         .no-card { background: #f8fafc; border: 1px dashed #cbd5e1; }
+        
+        .validation-box {
+            margin-top: 15px; padding: 12px; border-radius: 12px;
+            text-align: center; font-size: 0.75rem; font-weight: 600;
+        }
+        .valid-ok { background: #d1fae5; color: var(--success); }
+        .valid-err { background: #fee2e2; color: var(--error); }
+
         .footer { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: 15px; }
     </style>
 </head>
@@ -79,19 +97,33 @@
 
 <div class="container">
     <h1>🏸 Luda's Calc</h1>
-    <div class="subtitle">Multi-Hour Group Splitter</div>
+    <div class="subtitle">Smart Court Splitter</div>
     
-    <div class="input-group">
-        <label>Full Court Fee (Before Swipes)</label>
-        <input type="number" id="fullCourtFee" value="600">
+    <div class="input-grid">
+        <div class="input-group">
+            <label>Full Court Fee</label>
+            <input type="number" id="fullFee" value="600">
+        </div>
+        <div class="input-group">
+            <label>Cash Paid to Club</label>
+            <input type="number" id="cashPaid" value="270">
+        </div>
     </div>
 
     <div class="input-grid">
-        <div>
-            <label>Hours</label>
-            <input type="number" id="sessionHours" value="2" step="0.5">
+        <div class="input-group">
+            <label>Session Duration</label>
+            <div class="select-wrapper">
+                <select id="sessionHours">
+                    <option value="1">1 Hour</option>
+                    <option value="1.5">1.5 Hours</option>
+                    <option value="2" selected>2 Hours</option>
+                    <option value="2.5">2.5 Hours</option>
+                    <option value="3">3 Hours</option>
+                </select>
+            </div>
         </div>
-        <div>
+        <div class="input-group">
             <label>Shuttle Cost</label>
             <input type="number" id="shuttleCost" value="75">
         </div>
@@ -108,7 +140,7 @@
         </div>
     </div>
 
-    <button onclick="calculate()">Calculate Now</button>
+    <button onclick="calculate()">Calculate & Validate</button>
 
     <div id="results">
         <div class="card">
@@ -123,29 +155,30 @@
             <span class="label-text">NO CARD / BLOCKED</span>
             <span id="resNoCard" class="price-text"></span>
         </div>
+
+        <div id="validationBox" class="validation-box"></div>
+
         <div class="footer">
-            Cash to collect: <span id="actualCash"></span> PLN<br>
-            Managed by Luda
+            Designed for Luda
         </div>
     </div>
 </div>
 
 <script>
     function calculate() {
-        const fullFee = parseFloat(document.getElementById('fullCourtFee').value) || 0;
+        const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
+        const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
         const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
         const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
         const players = parseInt(document.getElementById('totalPlayers').value) || 1;
         const actualSwipes = parseInt(document.getElementById('actualSwipes').value) || 0;
         
         const swipeValue = 15.0;
-        const discountTotal = actualSwipes * swipeValue;
-        const cashToCollect = (fullFee - discountTotal) + shuttles;
-
-        // Base cost if no cards existed
+        
+        // Calculation Logic
         const baseCostPerPerson = (fullFee + shuttles) / players;
-
-        // Plus cards get 1 swipe per full hour (rounded down, min 1)
+        
+        // Plus cards get 1 swipe per hour (floor of hours)
         const plusSwipeCount = Math.max(1, Math.floor(hours));
         const plusDiscount = plusSwipeCount * swipeValue;
 
@@ -153,12 +186,25 @@
         const lightCost = Math.max(0, baseCostPerPerson - 15);
         const noCardCost = baseCostPerPerson;
 
+        // Validation Logic
+        const totalToRecover = cashPaid + shuttles;
+        const calculatedCashToPay = (fullFee - (actualSwipes * 15)) + shuttles;
+        const diff = Math.abs(calculatedCashToPay - totalToRecover);
+
         // UI Updates
         document.getElementById('plusLabel').innerText = `PLUS (${plusDiscount} PLN off)`;
         document.getElementById('resPlus').innerText = plusCost.toFixed(2) + " PLN";
         document.getElementById('resLight').innerText = lightCost.toFixed(2) + " PLN";
         document.getElementById('resNoCard').innerText = noCardCost.toFixed(2) + " PLN";
-        document.getElementById('actualCash').innerText = cashToCollect.toFixed(2);
+        
+        const vBox = document.getElementById('validationBox');
+        if (diff < 0.1) {
+            vBox.className = "validation-box valid-ok";
+            vBox.innerText = `✅ Math Verified: Recovery total ${totalToRecover.toFixed(2)} PLN`;
+        } else {
+            vBox.className = "validation-box valid-err";
+            vBox.innerText = `⚠️ Note: Inputs suggest ${calculatedCashToPay.toFixed(2)} PLN expected.`;
+        }
         
         document.getElementById('results').style.display = 'block';
     }
