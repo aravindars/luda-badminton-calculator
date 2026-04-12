@@ -9,7 +9,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LudaCalc">
-    <meta name="mobile-web-app-capable" content="yes">
     
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2851/2851574.png">
 
@@ -81,12 +80,12 @@
 
 <div class="container">
     <h1>🏸 Luda's Calc</h1>
-    <div class="subtitle">Precision Group Splitter</div>
+    <div class="subtitle">Smart Court Splitter</div>
     
     <div class="section-label">Club Costs</div>
     <div class="input-grid">
         <div class="input-group"><label>Full Fee</label><input type="number" id="fullFee" value="600"></div>
-        <div class="input-group"><label>Cash Paid</label><input type="number" id="cashPaid" value="270"></div>
+        <div class="input-group"><label>Actual Swipes</label><input type="number" id="actualSwipes" value="22"></div>
     </div>
 
     <div class="input-grid">
@@ -124,18 +123,27 @@
 
 <script>
     function calculate() {
-        const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
+        const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
+        const swipes = parseInt(document.getElementById('actualSwipes').value) || 0;
         const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
         const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
+        
         const cPlus = parseInt(document.getElementById('cntPlus').value) || 0;
         const cLight = parseInt(document.getElementById('cntLight').value) || 0;
         const cNone = parseInt(document.getElementById('cntNone').value) || 0;
+        
         const totalPlayers = cPlus + cLight + cNone;
         if (totalPlayers === 0) return;
 
-        const totalToRecover = cashPaid + shuttles;
+        // Target: What Luda actually pays the club based on real swipes
+        const totalToRecover = (fullFee - (swipes * 15)) + shuttles;
+
+        // Discount gaps: Plus (1 per hour), Light (fixed 1)
         const plusDisc = Math.max(1, Math.floor(hours)) * 15.0;
-        const totalDiscounts = (cPlus * plusDisc) + (cLight * 15.0);
+        const lightDisc = 15.0;
+
+        // Standard math: Recover = (Base * Players) - Total Discounts Applied
+        const totalDiscounts = (cPlus * plusDisc) + (cLight * lightDisc);
         const basePrice = (totalToRecover + totalDiscounts) / totalPlayers;
 
         const cp = Math.max(0, basePrice - plusDisc);
