@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Luda's Calculator</title>
     
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Ludas%20Calculator%22,%22short_name%22:%22LudaCalc%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%236366f1%22}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LudaCalc">
+    <meta name="mobile-web-app-capable" content="yes">
     
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2851/2851574.png">
 
@@ -42,27 +44,20 @@
         
         label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; color: #475569; }
         
-        /* Remove default number arrows */
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
 
         input, select { 
             width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; 
             font-size: 1rem; box-sizing: border-box; outline: none; background: rgba(255,255,255,0.8);
-            transition: border 0.2s;
         }
-        input:focus, select:focus { border-color: var(--primary); }
 
-        /* Sleek Dropdown Arrow */
         .select-wrapper { position: relative; }
         .select-wrapper select { appearance: none; padding-right: 35px; cursor: pointer; }
         .select-wrapper::after {
-            content: "";
-            position: absolute; right: 15px; top: 50%;
-            width: 8px; height: 8px;
-            border-right: 2px solid var(--primary);
-            border-bottom: 2px solid var(--primary);
-            transform: translateY(-70%) rotate(45deg);
+            content: ""; position: absolute; right: 15px; top: 50%;
+            width: 8px; height: 8px; border-right: 2px solid var(--primary);
+            border-bottom: 2px solid var(--primary); transform: translateY(-70%) rotate(45deg);
             pointer-events: none;
         }
 
@@ -73,20 +68,12 @@
         }
 
         #results { margin-top: 20px; display: none; }
-
-        .card { 
-            background: white; padding: 12px 16px; border-radius: 16px; margin-bottom: 8px;
-            display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9;
-        }
-
+        .card { background: white; padding: 12px 16px; border-radius: 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; }
         .label-text { font-size: 0.85rem; font-weight: 600; color: #64748b; }
         .price-text { font-weight: 800; font-size: 1.2rem; color: #4338ca; }
-        
         .no-card { background: #f8fafc; border: 1px dashed #cbd5e1; }
-        
         .validation-box { margin-top: 15px; padding: 12px; border-radius: 12px; text-align: center; font-size: 0.75rem; font-weight: 600; }
         .valid-ok { background: #d1fae5; color: var(--success); }
-        .valid-err { background: #fee2e2; color: var(--error); }
         .footer { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: 15px; }
     </style>
 </head>
@@ -98,14 +85,8 @@
     
     <div class="section-label">Club Costs</div>
     <div class="input-grid">
-        <div class="input-group">
-            <label>Full Court Fee</label>
-            <input type="number" id="fullFee" value="600" inputmode="numeric">
-        </div>
-        <div class="input-group">
-            <label>Cash Paid to Club</label>
-            <input type="number" id="cashPaid" value="270" inputmode="numeric">
-        </div>
+        <div class="input-group"><label>Full Fee</label><input type="number" id="fullFee" value="600"></div>
+        <div class="input-group"><label>Cash Paid</label><input type="number" id="cashPaid" value="270"></div>
     </div>
 
     <div class="input-grid">
@@ -113,35 +94,29 @@
             <label>Duration</label>
             <div class="select-wrapper">
                 <select id="sessionHours">
-                    <option value="1">1 Hour</option>
-                    <option value="1.5">1.5 Hours</option>
-                    <option value="2">2 Hours</option>
-                    <option value="2.5">2.5 Hours</option>
-                    <option value="3" selected>3 Hours</option>
-                    <option value="4">4 Hours</option>
+                    <option value="1">1 Hour</option><option value="1.5">1.5 Hours</option>
+                    <option value="2">2 Hours</option><option value="2.5">2.5 Hours</option>
+                    <option value="3" selected>3 Hours</option><option value="4">4 Hours</option>
                     <option value="5">5 Hours</option>
                 </select>
             </div>
         </div>
-        <div class="input-group">
-            <label>Shuttle Cost</label>
-            <input type="number" id="shuttleCost" value="75" inputmode="numeric">
-        </div>
+        <div class="input-group"><label>Shuttles</label><input type="number" id="shuttleCost" value="75"></div>
     </div>
 
     <div class="section-label">Player Counts</div>
     <div class="input-grid-three">
-        <div><label>Plus</label><input type="number" id="cntPlus" value="10" inputmode="numeric"></div>
-        <div><label>Light</label><input type="number" id="cntLight" value="2" inputmode="numeric"></div>
-        <div><label>No Card</label><input type="number" id="cntNone" value="3" inputmode="numeric"></div>
+        <div><label>Plus</label><input type="number" id="cntPlus" value="10"></div>
+        <div><label>Light</label><input type="number" id="cntLight" value="2"></div>
+        <div><label>No Card</label><input type="number" id="cntNone" value="3"></div>
     </div>
 
     <button onclick="calculate()">Calculate Now</button>
 
     <div id="results">
-        <div class="card"><span class="label-text" id="plusLabel">Plus Price</span><span id="resPlus" class="price-text"></span></div>
-        <div class="card"><span class="label-text">Light Price</span><span id="resLight" class="price-text"></span></div>
-        <div class="card no-card"><span class="label-text">No Card Price</span><span id="resNoCard" class="price-text"></span></div>
+        <div class="card"><span class="label-text" id="plusLabel">Plus</span><span id="resPlus" class="price-text"></span></div>
+        <div class="card"><span class="label-text">Light</span><span id="resLight" class="price-text"></span></div>
+        <div class="card no-card"><span class="label-text">No Card</span><span id="resNoCard" class="price-text"></span></div>
         <div id="validationBox" class="validation-box"></div>
         <div class="footer">Designed for Luda</div>
     </div>
@@ -152,41 +127,32 @@
         const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
         const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
         const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
-        
         const cPlus = parseInt(document.getElementById('cntPlus').value) || 0;
         const cLight = parseInt(document.getElementById('cntLight').value) || 0;
         const cNone = parseInt(document.getElementById('cntNone').value) || 0;
-        
         const totalPlayers = cPlus + cLight + cNone;
         if (totalPlayers === 0) return;
 
         const totalToRecover = cashPaid + shuttles;
-        const swipeVal = 15.0;
-
-        const plusDisc = Math.max(1, Math.floor(hours)) * swipeVal;
-        const lightDisc = 15.0;
-
-        const totalDiscounts = (cPlus * plusDisc) + (cLight * lightDisc);
+        const plusDisc = Math.max(1, Math.floor(hours)) * 15.0;
+        const totalDiscounts = (cPlus * plusDisc) + (cLight * 15.0);
         const basePrice = (totalToRecover + totalDiscounts) / totalPlayers;
 
-        const costPlus = Math.max(0, basePrice - plusDisc);
-        const costLight = Math.max(0, basePrice - lightDisc);
-        const costNone = basePrice;
+        const cp = Math.max(0, basePrice - plusDisc);
+        const cl = Math.max(0, basePrice - 15.0);
+        const cn = basePrice;
 
-        const checkSum = (costPlus * cPlus) + (costLight * cLight) + (costNone * cNone);
-        
         document.getElementById('plusLabel').innerText = `PLUS (${plusDisc} PLN off)`;
-        document.getElementById('resPlus').innerText = costPlus.toFixed(2) + " PLN";
-        document.getElementById('resLight').innerText = costLight.toFixed(2) + " PLN";
-        document.getElementById('resNoCard').innerText = costNone.toFixed(2) + " PLN";
+        document.getElementById('resPlus').innerText = cp.toFixed(2) + " PLN";
+        document.getElementById('resLight').innerText = cl.toFixed(2) + " PLN";
+        document.getElementById('resNoCard').innerText = cn.toFixed(2) + " PLN";
 
+        const checkSum = (cp * cPlus) + (cl * cLight) + (cn * cNone);
         const vBox = document.getElementById('validationBox');
         vBox.className = "validation-box valid-ok";
-        vBox.innerText = `✅ Math Verified: Recovery total ${totalToRecover.toFixed(2)} PLN`;
-        
+        vBox.innerText = `✅ Verified: Recovery total ${checkSum.toFixed(2)} PLN`;
         document.getElementById('results').style.display = 'block';
     }
 </script>
-
 </body>
 </html>
