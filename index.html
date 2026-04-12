@@ -51,10 +51,9 @@
             width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; 
             font-size: 1rem; box-sizing: border-box; outline: none;
             background: rgba(255,255,255,0.8);
-            appearance: none; /* Removes default styling for clean look */
+            appearance: none;
         }
 
-        /* Custom dropdown arrow */
         .select-wrapper { position: relative; }
         .select-wrapper::after {
             content: "▼"; font-size: 0.7rem; color: #6366f1;
@@ -112,7 +111,7 @@
 
     <div class="input-grid">
         <div class="input-group">
-            <label>Session Duration</label>
+            <label>Duration</label>
             <div class="select-wrapper">
                 <select id="sessionHours">
                     <option value="1">1 Hour</option>
@@ -120,6 +119,10 @@
                     <option value="2" selected>2 Hours</option>
                     <option value="2.5">2.5 Hours</option>
                     <option value="3">3 Hours</option>
+                    <option value="3.5">3.5 Hours</option>
+                    <option value="4">4 Hours</option>
+                    <option value="4.5">4.5 Hours</option>
+                    <option value="5">5 Hours</option>
                 </select>
             </div>
         </div>
@@ -174,36 +177,43 @@
         const actualSwipes = parseInt(document.getElementById('actualSwipes').value) || 0;
         
         const swipeValue = 15.0;
-        
-        // Calculation Logic
-        const baseCostPerPerson = (fullFee + shuttles) / players;
-        
-        // Plus cards get 1 swipe per hour (floor of hours)
-        const plusSwipeCount = Math.max(1, Math.floor(hours));
-        const plusDiscount = plusSwipeCount * swipeValue;
-
-        const plusCost = Math.max(0, baseCostPerPerson - plusDiscount);
-        const lightCost = Math.max(0, baseCostPerPerson - 15);
-        const noCardCost = baseCostPerPerson;
-
-        // Validation Logic
         const totalToRecover = cashPaid + shuttles;
-        const calculatedCashToPay = (fullFee - (actualSwipes * 15)) + shuttles;
-        const diff = Math.abs(calculatedCashToPay - totalToRecover);
+
+        // Group Composition (10 Plus, 2 Light, 3 None)
+        const plusCount = 10;
+        const lightCount = 2;
+        const noneCount = 3;
+
+        // Max possible swipes for Plus users based on duration
+        const plusDiscountFactor = Math.max(1, Math.floor(hours)) * swipeValue; 
+        const lightDiscountFactor = 15;
+
+        // Logic: Standard Price = (Cash Needed + Sum of all Discounts) / Players
+        const totalDiscountsGiven = (plusCount * plusDiscountFactor) + (lightCount * lightDiscountFactor);
+        const standardPricePerPerson = (totalToRecover + totalDiscountsGiven) / players;
+
+        // Individual Costs
+        let plusCost = standardPricePerPerson - plusDiscountFactor;
+        let lightCost = standardPricePerPerson - lightDiscountFactor;
+        let noCardCost = standardPricePerPerson;
+
+        // Verification Math
+        const checkTotal = (plusCost * plusCount) + (lightCost * lightCount) + (noCardCost * noneCount);
+        const diff = Math.abs(checkTotal - totalToRecover);
 
         // UI Updates
-        document.getElementById('plusLabel').innerText = `PLUS (${plusDiscount} PLN off)`;
-        document.getElementById('resPlus').innerText = plusCost.toFixed(2) + " PLN";
-        document.getElementById('resLight').innerText = lightCost.toFixed(2) + " PLN";
+        document.getElementById('plusLabel').innerText = `PLUS (${plusDiscountFactor} PLN off)`;
+        document.getElementById('resPlus').innerText = Math.max(0, plusCost).toFixed(2) + " PLN";
+        document.getElementById('resLight').innerText = Math.max(0, lightCost).toFixed(2) + " PLN";
         document.getElementById('resNoCard').innerText = noCardCost.toFixed(2) + " PLN";
         
         const vBox = document.getElementById('validationBox');
-        if (diff < 0.1) {
+        if (diff < 0.5) {
             vBox.className = "validation-box valid-ok";
-            vBox.innerText = `✅ Math Verified: Recovery total ${totalToRecover.toFixed(2)} PLN`;
+            vBox.innerText = `✅ Verified: You will collect exactly ${totalToRecover.toFixed(2)} PLN`;
         } else {
             vBox.className = "validation-box valid-err";
-            vBox.innerText = `⚠️ Note: Inputs suggest ${calculatedCashToPay.toFixed(2)} PLN expected.`;
+            vBox.innerText = `⚠️ Balance Error: Check your Swipe count or Card types.`;
         }
         
         document.getElementById('results').style.display = 'block';
