@@ -38,18 +38,33 @@
         .section-label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 15px 0 8px 0; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
 
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .input-group { margin-bottom: 12px; }
         .input-grid-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         
         label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; color: #475569; }
         
-        input, select { 
-            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; 
-            font-size: 0.95rem; box-sizing: border-box; outline: none; background: rgba(255,255,255,0.8);
-        }
+        /* Remove default number arrows */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
 
+        input, select { 
+            width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; 
+            font-size: 1rem; box-sizing: border-box; outline: none; background: rgba(255,255,255,0.8);
+            transition: border 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+
+        /* Sleek Dropdown Arrow */
         .select-wrapper { position: relative; }
-        .select-wrapper::after { content: "▼"; font-size: 0.7rem; color: #6366f1; position: absolute; right: 10px; top: 35%; pointer-events: none; }
+        .select-wrapper select { appearance: none; padding-right: 35px; cursor: pointer; }
+        .select-wrapper::after {
+            content: "";
+            position: absolute; right: 15px; top: 50%;
+            width: 8px; height: 8px;
+            border-right: 2px solid var(--primary);
+            border-bottom: 2px solid var(--primary);
+            transform: translateY(-70%) rotate(45deg);
+            pointer-events: none;
+        }
 
         button { 
             width: 100%; padding: 16px; background: linear-gradient(to right, var(--primary), var(--secondary));
@@ -85,11 +100,11 @@
     <div class="input-grid">
         <div class="input-group">
             <label>Full Court Fee</label>
-            <input type="number" id="fullFee" value="600">
+            <input type="number" id="fullFee" value="600" inputmode="numeric">
         </div>
         <div class="input-group">
             <label>Cash Paid to Club</label>
-            <input type="number" id="cashPaid" value="270">
+            <input type="number" id="cashPaid" value="270" inputmode="numeric">
         </div>
     </div>
 
@@ -100,9 +115,9 @@
                 <select id="sessionHours">
                     <option value="1">1 Hour</option>
                     <option value="1.5">1.5 Hours</option>
-                    <option value="2" selected>2 Hours</option>
+                    <option value="2">2 Hours</option>
                     <option value="2.5">2.5 Hours</option>
-                    <option value="3">3 Hours</option>
+                    <option value="3" selected>3 Hours</option>
                     <option value="4">4 Hours</option>
                     <option value="5">5 Hours</option>
                 </select>
@@ -110,15 +125,15 @@
         </div>
         <div class="input-group">
             <label>Shuttle Cost</label>
-            <input type="number" id="shuttleCost" value="75">
+            <input type="number" id="shuttleCost" value="75" inputmode="numeric">
         </div>
     </div>
 
     <div class="section-label">Player Counts</div>
     <div class="input-grid-three">
-        <div><label>Plus</label><input type="number" id="cntPlus" value="10"></div>
-        <div><label>Light</label><input type="number" id="cntLight" value="2"></div>
-        <div><label>No Card</label><input type="number" id="cntNone" value="3"></div>
+        <div><label>Plus</label><input type="number" id="cntPlus" value="10" inputmode="numeric"></div>
+        <div><label>Light</label><input type="number" id="cntLight" value="2" inputmode="numeric"></div>
+        <div><label>No Card</label><input type="number" id="cntNone" value="3" inputmode="numeric"></div>
     </div>
 
     <button onclick="calculate()">Calculate Now</button>
@@ -148,11 +163,9 @@
         const totalToRecover = cashPaid + shuttles;
         const swipeVal = 15.0;
 
-        // Individual Discounts relative to No Card users
         const plusDisc = Math.max(1, Math.floor(hours)) * swipeVal;
         const lightDisc = 15.0;
 
-        // Formula: (Total Cash Needed + Sum of all Discounts) / Total Players = Base Price
         const totalDiscounts = (cPlus * plusDisc) + (cLight * lightDisc);
         const basePrice = (totalToRecover + totalDiscounts) / totalPlayers;
 
@@ -160,7 +173,6 @@
         const costLight = Math.max(0, basePrice - lightDisc);
         const costNone = basePrice;
 
-        // Verification: (Price * Count) + (Price * Count)...
         const checkSum = (costPlus * cPlus) + (costLight * cLight) + (costNone * cNone);
         
         document.getElementById('plusLabel').innerText = `PLUS (${plusDisc} PLN off)`;
@@ -170,7 +182,7 @@
 
         const vBox = document.getElementById('validationBox');
         vBox.className = "validation-box valid-ok";
-        vBox.innerText = `✅ Verified: You will collect exactly ${checkSum.toFixed(2)} PLN`;
+        vBox.innerText = `✅ Math Verified: Recovery total ${totalToRecover.toFixed(2)} PLN`;
         
         document.getElementById('results').style.display = 'block';
     }
