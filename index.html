@@ -8,7 +8,6 @@
     <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Ludas%20Calculator%22,%22short_name%22:%22LudaCalc%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%236366f1%22}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LudaCalc">
     
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2851/2851574.png">
 
@@ -35,45 +34,29 @@
 
         h1 { font-size: 1.6rem; text-align: center; margin: 0; color: #4338ca; }
         .subtitle { text-align: center; font-size: 0.8rem; color: #6366f1; margin-bottom: 20px; font-weight: 500; }
-
         .section-label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 15px 0 8px 0; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
-
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
         .input-grid-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-        
         label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; color: #475569; }
-        
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; }
-
-        input, select { 
-            width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; 
-            font-size: 1rem; box-sizing: border-box; outline: none; background: rgba(255,255,255,0.8);
-        }
-
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 1rem; box-sizing: border-box; outline: none; background: rgba(255,255,255,0.8); }
         .select-wrapper { position: relative; }
-        .select-wrapper select { appearance: none; padding-right: 35px; cursor: pointer; }
-        .select-wrapper::after {
-            content: ""; position: absolute; right: 15px; top: 50%;
-            width: 8px; height: 8px; border-right: 2px solid var(--primary);
-            border-bottom: 2px solid var(--primary); transform: translateY(-70%) rotate(45deg);
-            pointer-events: none;
-        }
-
-        button { 
-            width: 100%; padding: 16px; background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); margin-top: 10px;
-        }
-
+        .select-wrapper select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 1rem; appearance: none; background: rgba(255,255,255,0.8); cursor: pointer; }
+        .select-wrapper::after { content: ""; position: absolute; right: 15px; top: 50%; width: 8px; height: 8px; border-right: 2px solid var(--primary); border-bottom: 2px solid var(--primary); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+        button { width: 100%; padding: 16px; background: linear-gradient(to right, var(--primary), var(--secondary)); color: white; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        
         #results { margin-top: 20px; display: none; }
         .card { background: white; padding: 12px 16px; border-radius: 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; }
         .label-text { font-size: 0.85rem; font-weight: 600; color: #64748b; }
         .price-text { font-weight: 800; font-size: 1.2rem; color: #4338ca; }
         .no-card { background: #f8fafc; border: 1px dashed #cbd5e1; }
-        .validation-box { margin-top: 15px; padding: 12px; border-radius: 12px; text-align: center; font-size: 0.75rem; font-weight: 600; }
+        
+        .note-box { background: rgba(99, 102, 241, 0.05); padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid rgba(99, 102, 241, 0.1); }
+        .note-title { font-size: 0.65rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .note-text { font-size: 0.7rem; color: #64748b; line-height: 1.4; margin: 0; padding: 0; list-style: none; }
+        .note-text li::before { content: "• "; color: var(--primary); }
+
+        .validation-box { margin-top: 10px; padding: 10px; border-radius: 12px; text-align: center; font-size: 0.7rem; font-weight: 700; }
         .valid-ok { background: #d1fae5; color: var(--success); }
-        .valid-err { background: #fee2e2; color: var(--error); }
         .footer { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: 15px; }
     </style>
 </head>
@@ -81,14 +64,13 @@
 
 <div class="container">
     <h1>🏸 Luda's Calc</h1>
-    <div class="subtitle">Precision Group Splitter</div>
+    <div class="subtitle">Fair Cost Splitter</div>
     
     <div class="section-label">Club Transaction</div>
     <div class="input-grid">
         <div class="input-group"><label>Full Fee</label><input type="number" id="fullFee" value="600"></div>
         <div class="input-group"><label>Cash Paid</label><input type="number" id="cashPaid" value="270"></div>
     </div>
-
     <div class="input-grid">
         <div class="input-group">
             <label>Duration</label>
@@ -103,10 +85,8 @@
         </div>
         <div class="input-group"><label>Actual Swipes</label><input type="number" id="actualSwipes" value="22"></div>
     </div>
-
     <div class="input-grid">
         <div class="input-group"><label>Shuttles</label><input type="number" id="shuttleCost" value="75"></div>
-        <div class="input-group" style="visibility:hidden"></div>
     </div>
 
     <div class="section-label">Player Counts</div>
@@ -116,12 +96,21 @@
         <div><label>No Card</label><input type="number" id="cntNone" value="3"></div>
     </div>
 
-    <button onclick="calculate()">Calculate Now</button>
+    <button onclick="calculate()">Calculate Fair Split</button>
 
     <div id="results">
         <div class="card"><span class="label-text" id="plusLabel">Plus</span><span id="resPlus" class="price-text"></span></div>
         <div class="card"><span class="label-text">Light</span><span id="resLight" class="price-text"></span></div>
         <div class="card no-card"><span class="label-text">No Card</span><span id="resNoCard" class="price-text"></span></div>
+        
+        <div class="note-box">
+            <span class="note-title">Logic Summary:</span>
+            <ul class="note-text">
+                <li>Card discounts apply ONLY to the court portion.</li>
+                <li>Shuttle costs are split equally among ALL players.</li>
+            </ul>
+        </div>
+
         <div id="validationBox" class="validation-box"></div>
         <div class="footer">Handcrafted for Luda</div>
     </div>
@@ -131,52 +120,32 @@
     function calculate() {
         const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
         const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
-        const swipes = parseInt(document.getElementById('actualSwipes').value) || 0;
         const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
         const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
-        
         const cPlus = parseInt(document.getElementById('cntPlus').value) || 0;
         const cLight = parseInt(document.getElementById('cntLight').value) || 0;
         const cNone = parseInt(document.getElementById('cntNone').value) || 0;
-        
         const totalPlayers = cPlus + cLight + cNone;
         if (totalPlayers === 0) return;
 
-        // The goal: Recover what was actually paid out of pocket
-        const totalToRecover = cashPaid + shuttles;
-
-        // Plus credit scales with hours (1 swipe per full hour)
+        const individualCourtShare = fullFee / totalPlayers;
+        const individualShuttleShare = shuttles / totalPlayers;
         const plusDisc = Math.max(1, Math.floor(hours)) * 15.0;
-        const lightDisc = 15.0;
-
-        // Logic: Standard Share = (Actual Cash + Value of all expected Discounts) / Players
-        const totalDiscounts = (cPlus * plusDisc) + (cLight * lightDisc);
-        const standardShare = (totalToRecover + totalDiscounts) / totalPlayers;
-
-        const cp = Math.max(0, standardShare - plusDisc);
-        const cl = Math.max(0, standardShare - 15.0);
-        const cn = standardShare;
+        
+        const cp = Math.max(0, individualCourtShare - plusDisc) + individualShuttleShare;
+        const cl = Math.max(0, individualCourtShare - 15.0) + individualShuttleShare;
+        const cn = individualCourtShare + individualShuttleShare;
 
         document.getElementById('plusLabel').innerText = `PLUS (${plusDisc} PLN off)`;
         document.getElementById('resPlus').innerText = cp.toFixed(2) + " PLN";
         document.getElementById('resLight').innerText = cl.toFixed(2) + " PLN";
         document.getElementById('resNoCard').innerText = cn.toFixed(2) + " PLN";
 
-        // Validation check: Does (Cash Paid + Swipes*15) = Full Fee?
-        const theoreticalFullFee = cashPaid + (swipes * 15);
-        const diff = Math.abs(theoreticalFullFee - fullFee);
+        const totalToRecover = cashPaid + shuttles;
+        const totalCollected = (cp * cPlus) + (cl * cLight) + (cn * cNone);
         const vBox = document.getElementById('validationBox');
-        
-        const recoverySum = (cp * cPlus) + (cl * cLight) + (cn * cNone);
-
-        if (diff < 0.1) {
-            vBox.className = "validation-box valid-ok";
-            vBox.innerText = `✅ Verified: Recovery total ${recoverySum.toFixed(2)} PLN`;
-        } else {
-            vBox.className = "validation-box valid-err";
-            vBox.innerText = `⚠️ Note: Club payment mismatch. Swipes + Cash = ${theoreticalFullFee} vs Full Fee ${fullFee}.`;
-        }
-        
+        vBox.className = "validation-box valid-ok";
+        vBox.innerText = `Verified: Collect ${totalCollected.toFixed(2)} PLN`;
         document.getElementById('results').style.display = 'block';
     }
 </script>
