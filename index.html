@@ -68,8 +68,8 @@
     
     <div class="section-label">Club Transaction</div>
     <div class="input-grid">
-        <div class="input-group"><label>Full Fee</label><input type="number" id="fullFee" value="600"></div>
-        <div class="input-group"><label>Cash Paid</label><input type="number" id="cashPaid" value="270"></div>
+        <div class="input-group"><label>Full Fee</label><input type="number" id="fullFee" value="140"></div>
+        <div class="input-group"><label>Cash Paid</label><input type="number" id="cashPaid" value="50"></div>
     </div>
     <div class="input-grid">
         <div class="input-group">
@@ -86,14 +86,14 @@
         <div class="input-group"><label>Actual Swipes</label><input type="number" id="actualSwipes" value="22"></div>
     </div>
     <div class="input-grid">
-        <div class="input-group"><label>Shuttles</label><input type="number" id="shuttleCost" value="75"></div>
+        <div class="input-group"><label>Shuttles</label><input type="number" id="shuttleCost" value="12.5"></div>
     </div>
 
     <div class="section-label">Player Counts</div>
     <div class="input-grid-three">
-        <div><label>Plus</label><input type="number" id="cntPlus" value="9"></div>
-        <div><label>Light</label><input type="number" id="cntLight" value="5"></div>
-        <div><label>No Card</label><input type="number" id="cntNone" value="1"></div>
+        <div><label>Plus</label><input type="number" id="cntPlus" value="3"></div>
+        <div><label>Light</label><input type="number" id="cntLight" value="0"></div>
+        <div><label>No Card</label><input type="number" id="cntNone" value="2"></div>
     </div>
 
     <button onclick="calculate()">Calculate Fair Split</button>
@@ -116,64 +116,7 @@
     </div>
 </div>
 
-<script>
-    function calculate() {
-        const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
-        const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
-        const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
-        const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
-        
-        const cPlus = parseInt(document.getElementById('cntPlus').value) || 0;
-        const cLight = parseInt(document.getElementById('cntLight').value) || 0;
-        const cNone = parseInt(document.getElementById('cntNone').value) || 0;
-        
-        const totalPlayers = cPlus + cLight + cNone;
-        if (totalPlayers === 0) return;
+<script src="script.js"></script>
 
-        // 1. Shuttles: Equal split for everyone
-        const sShare = shuttles / totalPlayers;
-
-        // 2. No-Card User: Full standard share (Court / Players + Shuttle share)
-        const cn = (fullFee / totalPlayers) + sShare;
-
-        // 3. Card Users: Adjust to collect the actual Cash Paid + total Shuttles
-        const totalToRecover = cashPaid + shuttles;
-        const cardDebt = totalToRecover - (cn * cNone); // Amount left to cover by card users
-
-        // Gap based on duration benefit (Plus gets 15/hr, Light gets 15 total)
-        const plusBenefit = Math.max(1, Math.floor(hours)) * 15.0;
-        const lightBenefit = 15.0;
-        const gap = plusBenefit - lightBenefit;
-
-        const totalCardUsers = cPlus + cLight;
-        let cp, cl;
-
-        if (totalCardUsers > 0) {
-            // Logic: cl*cLight + (cl - gap)*cPlus = cardDebt
-            cl = (cardDebt + (cPlus * gap)) / totalCardUsers;
-            cp = cl - gap;
-            
-            // Safety: Ensure no one pays less than just their shuttle share
-            cp = Math.max(sShare, cp);
-            cl = Math.max(sShare, cl);
-        } else {
-            cp = 0; cl = 0;
-        }
-
-        // Apply Results & Labels
-        document.getElementById('plusLabel').innerText = `PLUS (max ${plusBenefit} PLN off court)`;
-        document.getElementById('lightLabel').innerText = `LIGHT (max ${lightBenefit} PLN off court)`;
-
-        document.getElementById('resPlus').innerText = cp.toFixed(2) + " PLN";
-        document.getElementById('resLight').innerText = cl.toFixed(2) + " PLN";
-        document.getElementById('resNoCard').innerText = cn.toFixed(2) + " PLN";
-
-        const totalCollected = (cp * cPlus) + (cl * cLight) + (cn * cNone);
-        const vBox = document.getElementById('validationBox');
-        vBox.className = "validation-box valid-ok";
-        vBox.innerText = `✅ Verified: Recovering ${totalCollected.toFixed(2)} PLN`;
-        document.getElementById('results').style.display = 'block';
-    }
-</script>
 </body>
 </html>
