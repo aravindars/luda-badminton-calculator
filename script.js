@@ -48,9 +48,10 @@ function calculate() {
     document.getElementById('plusLabel').innerText = `PLUS (max ${plusMaxDiscount} PLN off court)`;
     document.getElementById('lightLabel').innerText = `LIGHT (max ${lightMaxDiscount} PLN off court)`;
 
-    document.getElementById('resPlus').innerText = cp.toFixed(2) + " PLN";
-    document.getElementById('resLight').innerText = cl.toFixed(2) + " PLN";
-    document.getElementById('resNoCard').innerText = cn.toFixed(2) + " PLN";
+    // Update UI - Only show values if player count > 0 to avoid confusion
+    document.getElementById('resPlus').innerText = cPlus > 0 ? cp.toFixed(2) + " PLN" : "0.00 PLN";
+    document.getElementById('resLight').innerText = cLight > 0 ? cl.toFixed(2) + " PLN" : "0.00 PLN";
+    document.getElementById('resNoCard').innerText = cNone > 0 ? cn.toFixed(2) + " PLN" : "0.00 PLN";
 
     // 8. Validation
     const totalCollected = (cp * cPlus) + (cl * cLight) + (cn * cNone);
