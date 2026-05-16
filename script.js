@@ -33,17 +33,23 @@ function calculate() {
 
     // Scale the debt to match what we actually paid out-of-pocket (Cash Paid)
     let scale = 1;
-    if (totalCalculatedCourtRevenue > 0) {
-        scale = cashPaid / totalCalculatedCourtRevenue;
-    } else if (cashPaid === 0) {
-        scale = 0;
+let flatCashSharePerCardUser = 0;
+
+if (totalCalculatedCourtRevenue > 0) {
+    scale = cashPaid / totalCalculatedCourtRevenue;
+} else if (cashPaid > 0 && totalCalculatedCourtRevenue === 0) {
+    // BUG FIX: If everyone's discount reduced court debt to 0, 
+    // but there is still remaining cash paid, split that cash equally among card users.
+    const totalCardUsers = cPlus + cLight;
+    if (totalCardUsers > 0) {
+        flatCashSharePerCardUser = cashPaid / totalCardUsers;
     }
+}
 
     // 6. Final Prices (Scaled Court Debt + Shuttle Share)
-    const cp = (courtDebtPlus * scale) + shuttleShare;
-    const cl = (courtDebtLight * scale) + shuttleShare;
-    const cn = (courtDebtNone * scale) + shuttleShare;
-
+    const cp = (courtDebtPlus * scale) + flatCashSharePerCardUser + shuttleShare;
+const cl = (courtDebtLight * scale) + flatCashSharePerCardUser + shuttleShare;
+const cn = (courtDebtNone * scale) + shuttleShare;
     // 7. Apply Results to UI
     document.getElementById('plusLabel').innerText = `PLUS (max ${plusMaxDiscount} PLN off court)`;
     document.getElementById('lightLabel').innerText = `LIGHT (max ${lightMaxDiscount} PLN off court)`;
