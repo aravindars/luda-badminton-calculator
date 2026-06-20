@@ -1,5 +1,5 @@
 function calculate() {
-    // 1. Get Inputs (Using your exact existing IDs from index.html)
+    // 1. Get Inputs
     const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
     const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
     const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
@@ -14,46 +14,63 @@ function calculate() {
     const totalPlayers = cPlus + cLight + cNone;
     if (totalPlayers === 0) return;
 
-    // 2. Dynamic Labels setup (Kept original label functionality)
+    // 2. Set Up Dynamic UI Labels
     const plusMaxDiscount = Math.max(1, Math.floor(hours)) * 15.0; 
     const lightMaxDiscount = 15.0;
     document.getElementById('plusLabel').innerText = `PLUS (max ${plusMaxDiscount} PLN off court)`;
     document.getElementById('lightLabel').innerText = `LIGHT (max ${lightMaxDiscount} PLN off court)`;
 
-    // 3. MultiSport Structural Rule Calculations (Max 4 swipes per court per hour)
+    // 3. MultiSport Structural Floor (Max 4 swipes per court per hour)
     const maxSwipesPerCourtPerHour = 4;
     const totalMaxSlotsAllowed = courts * maxSwipesPerCourtPerHour * hours;
 
-    // Calculate minimum unavoidable cash floor (if all slots had been maxed out with Plus cards)
+    // Calculate minimum unavoidable cash floor
     const discountPerSwipe = 15; 
     const perfectScenarioDiscount = totalMaxSlotsAllowed * discountPerSwipe;
     const minimumStructuralFloor = Math.max(0, fullFee - perfectScenarioDiscount);
 
-    // 4. Distribute that unavoidable base fee floor equally among EVERYONE
+    // 4. Base Shared Cost per person (Unavoidable club minimum)
     const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
-
-    // 5. Handle any remaining cash paid (uncovered court balance caused by missing cards)
-    const remainingCashPenalty = Math.max(0, cashPaid - minimumStructuralFloor);
-    const totalNoCardOrLightUsers = cLight + cNone; 
-
-    let penaltyPerNoCardUser = 0;
-    if (remainingCashPenalty > 0 && totalNoCardOrLightUsers > 0) {
-        // Shared exclusively among those who couldn't scan a full Plus card
-        penaltyPerNoCardUser = remainingCashPenalty / totalNoCardOrLightUsers;
-    } else if (remainingCashPenalty > 0 && totalNoCardOrLightUsers === 0) {
-        // Fallback if everyone is a Plus card user but the facility still required a cash remainder
-        penaltyPerNoCardUser = remainingCashPenalty / totalPlayers;
-    }
-
-    // 6. Calculate even split for shuttles
     const shuttleShare = shuttles / totalPlayers;
 
-    // 7. Final Individual Price Construction
-    let cp = baseFloorPerPerson + shuttleShare; 
-    let cl = baseFloorPerPerson + penaltyPerNoCardUser + shuttleShare;
-    let cn = baseFloorPerPerson + penaltyPerNoCardUser + shuttleShare;
+    // 5. Calculate Remaining Court Costs to distribute
+    // Total court money we actually need to collect out-of-pocket
+    const totalCourtCashNeeded = cashPaid; 
+    
+    // Theoretical individual base targets if we split the remaining cash out-of-pocket directly
+    const remainingCourtCashToSplit = Math.max(0, totalCourtCashNeeded - minimumStructuralFloor);
+    
+    // Establish individual raw court debts before card tracking adjustments
+    let courtDebtPlus = 0;
+    let courtDebtLight = remainingCourtCashToSplit / totalPlayers;
+    let courtDebtNone = remainingCourtCashToSplit / totalPlayers;
 
-    // Clean Exception: If actual swipes hit or exceed the facility's hard ceiling, split flatly
+    // Light users contribute a swipe (worth 15 PLN) to lower their specific out-of-pocket court target
+    if (cLight > 0) {
+        courtDebtLight = Math.max(0, courtDebtLight - lightMaxDiscount);
+    }
+
+    // Recalculate what is left over after Light users used their card discount
+    const totalCollectedFromCalculated = (courtDebtPlus * cPlus) + (courtDebtLight * cLight) + (courtDebtNone * cNone);
+    const uncoveredCourtBalance = Math.max(0, remainingCourtCashToSplit - totalCollectedFromCalculated);
+
+    // No-Card users inherit the remaining uncovered balance
+    if (cNone > 0) {
+        courtDebtNone += (uncoveredCourtBalance / cNone);
+    } else if (cLight > 0) {
+        // Fallback: If no "No Card" users exist, remaining balance maps to Light cards
+        courtDebtLight += (uncoveredCourtBalance / cLight);
+    } else if (cPlus > 0) {
+        // Final Fallback: If group is entirely Plus users, split remaining cash evenly
+        courtDebtPlus += (uncoveredCourtBalance / cPlus);
+    }
+
+    // 6. Final Individual Price Assembly
+    let cp = baseFloorPerPerson + courtDebtPlus + shuttleShare; 
+    let cl = baseFloorPerPerson + courtDebtLight + shuttleShare;
+    let cn = baseFloorPerPerson + courtDebtNone + shuttleShare;
+
+    // Exception Rule: If all possible club slots were maxed out, default to a flat split
     if (actualSwipes >= totalMaxSlotsAllowed) {
         const flatSplit = (cashPaid + shuttles) / totalPlayers;
         cp = flatSplit;
@@ -61,24 +78,24 @@ function calculate() {
         cn = flatSplit;
     }
 
-    // 8. Update UI - Only show values if player count > 0 to avoid confusion
+    // 7. Update UI Numbers
     document.getElementById('resPlus').innerText = cPlus > 0 ? cp.toFixed(2) + " PLN" : "0.00 PLN";
     document.getElementById('resLight').innerText = cLight > 0 ? cl.toFixed(2) + " PLN" : "0.00 PLN";
     document.getElementById('resNoCard').innerText = cNone > 0 ? cn.toFixed(2) + " PLN" : "0.00 PLN";
 
-    // 9. Validation Box
+    // 8. Validation Box
     const totalCollected = (cp * cPlus) + (cl * cLight) + (cn * cNone);
     const vBox = document.getElementById('validationBox');
     vBox.className = "validation-box valid-ok";
     vBox.innerText = `✅ Verified: Recovering ${totalCollected.toFixed(2)} PLN`;
     document.getElementById('results').style.display = 'block';
 
-    // 10. Dynamically populate the friendly breakdown card
+    // 9. Update Friendly Breakdown Card
     const insightCard = document.getElementById('insight-card');
     if (insightCard) {
         insightCard.style.display = "block";
         document.getElementById('floor-val').innerText = minimumStructuralFloor.toFixed(2);
-        document.getElementById('penalty-val').innerText = remainingCashPenalty.toFixed(2);
+        document.getElementById('penalty-val').innerText = remainingCourtCashToSplit.toFixed(2);
         document.getElementById('shuttle-val').innerText = shuttles.toFixed(2);
         
         const insightAlert = document.getElementById('insight-alert');
