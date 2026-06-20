@@ -71,24 +71,31 @@
         <div class="input-group"><label>Full Fee</label><input type="number" id="fullFee" value="140"></div>
         <div class="input-group"><label>Cash Paid</label><input type="number" id="cashPaid" value="50"></div>
     </div>
-    <div class="input-grid">
+
+    <div class="input-grid-three">
         <div class="input-group">
             <label>Duration</label>
             <div class="select-wrapper">
                 <select id="sessionHours">
-                    <option value="1">1 Hour</option><option value="1.5">1.5 Hours</option>
-                    <option value="2" selected>2 Hours</option><option value="2.5">2.5 Hours</option>
-                    <option value="3">3 Hours</option><option value="4">4 Hours</option>
+                    <option value="1">1 Hour</option>
+                    <option value="1.5">1.5 Hours</option>
+                    <option value="2" selected>2 Hours</option>
+                    <option value="2.5">2.5 Hours</option>
+                    <option value="3">3 Hours</option>
+                    <option value="3.5">3.5 Hours</option>
+                    <option value="4">4 Hours</option>
+                    <option value="4.5">4.5 Hours</option>
                     <option value="5">5 Hours</option>
                 </select>
             </div>
         </div>
         <div class="input-group">
-            <label for="courts">Number of Courts</label>
+            <label for="courts">Courts</label>
             <input type="number" id="courts" value="1" min="1" step="1">
         </div>
         <div class="input-group"><label>Actual Swipes</label><input type="number" id="actualSwipes" value="22"></div>
     </div>
+    
     <div class="input-grid">
         <div class="input-group"><label>Shuttles</label><input type="number" id="shuttleCost" value="12.5"></div>
     </div>
@@ -108,14 +115,14 @@
         <div class="card no-card"><span class="label-text">No Card</span><span id="resNoCard" class="price-text"></span></div>
         
         <div id="insight-card" style="margin-bottom: 15px; font-size: 13px; color: #444; background: #fdfbff; padding: 14px; border-radius: 10px; border: 1px solid #e0d4f7; display: none;">
-    <h4 style="margin: 0 0 8px 0; color: #6200ee; font-size: 14px;">🌟 How We're Splitting It:</h4>
-    <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.6;">
-        <li>• <strong>Unavoidable Club Base Fee:</strong> <span id="floor-val">0.00</span> PLN <span style="color: #666; font-size: 11px;">(Shared equally by everyone)</span></li>
-        <li>• <strong>Uncovered Court Balance:</strong> <span id="penalty-val">0.00</span> PLN <span style="color: #666; font-size: 11px;">(Shared by players with no active card)</span></li>
-        <li>• <strong>Shuttle Costs:</strong> <span id="shuttle-val">0.00</span> PLN <span style="color: #666; font-size: 11px;">(Shared equally by everyone)</span></li>
-    </ul>
-    <div id="insight-alert" style="color: #6200ee; font-weight: bold; margin-top: 8px; border-top: 1px dashed #e0d4f7; padding-top: 6px;"></div>
-</div>
+            <h4 style="margin: 0 0 8px 0; color: #6200ee; font-size: 14px;">🌟 How We're Splitting It:</h4>
+            <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.6;">
+                <li>• <strong>Unavoidable Club Base Fee:</strong> <span id="floor-val">0.00</span> PLN <span style="color: #666; font-size: 11px;">(Shared equally by everyone)</span></li>
+                <li>• <strong>Uncovered Court Balance:</strong> <span id="penalty-val">0.00</span> PLN <span style="color: #666; font-size: 11px;">(Shared by players with no active card)</span></li>
+                <li>• <strong>Shuttle Costs:</strong> <span id="shuttle-val">0.00</span> PLN <span style="color: #666; font-size: 11px;">(Shared equally by everyone)</span></li>
+            </ul>
+            <div id="insight-alert" style="color: #6200ee; font-weight: bold; margin-top: 8px; border-top: 1px dashed #e0d4f7; padding-top: 6px;"></div>
+        </div>
         
         <div class="note-box">
             <span class="note-title">LOGIC SUMMARY:</span>
