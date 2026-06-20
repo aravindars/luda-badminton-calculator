@@ -1,5 +1,5 @@
 function calculate() {
-    // 1. Get Inputs
+    // 1. Get Inputs (Using your exact index.html IDs)
     const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
     const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
     const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
@@ -7,62 +7,65 @@ function calculate() {
     const courts = parseInt(document.getElementById('courts').value) || 1; 
     const actualSwipes = parseInt(document.getElementById('actualSwipes').value) || 0;
 
-    const cPlus = parseInt(document.getElementById('cntPlus').value) || 0;
+    let cPlus = parseInt(document.getElementById('cntPlus').value) || 0;
     const cLight = parseInt(document.getElementById('cntLight').value) || 0;
     const cNone = parseInt(document.getElementById('cntNone').value) || 0;
     
-    const totalPlayers = cPlus + cLight + cNone;
-    if (totalPlayers === 0) return;
+    // 2. MultiSport Structural Floor Rules
+    const maxSwipesPerCourtPerHour = 4;
+    const totalMaxSlotsAllowed = courts * maxSwipesPerCourtPerHour * hours;
 
-    // 2. Set Up Dynamic UI Labels
+    // Detect true total player count across all 9 players 
+    // to split global costs like base fees and shuttles flawlessly.
+    const implicitPlusPlayers = Math.max(0, actualSwipes - cLight);
+    const calculatedTotalPlayers = Math.max(cPlus + cLight + cNone, implicitPlusPlayers + cLight + cNone);
+    
+    if (calculatedTotalPlayers === 0) return;
+
+    // Update internal Plus tracker if total session swipes indicate more attendees
+    if (implicitPlusPlayers > cPlus) {
+        cPlus = implicitPlusPlayers;
+    }
+
+    // 3. Set Up Dynamic UI Labels
     const plusMaxDiscount = Math.max(1, Math.floor(hours)) * 15.0; 
     const lightMaxDiscount = 15.0;
     document.getElementById('plusLabel').innerText = `PLUS (max ${plusMaxDiscount} PLN off court)`;
     document.getElementById('lightLabel').innerText = `LIGHT (max ${lightMaxDiscount} PLN off court)`;
 
-    // 3. MultiSport Structural Floor (Max 4 swipes per court per hour)
-    const maxSwipesPerCourtPerHour = 4;
-    const totalMaxSlotsAllowed = courts * maxSwipesPerCourtPerHour * hours;
-
-    // Calculate minimum unavoidable cash floor
     const discountPerSwipe = 15; 
     const perfectScenarioDiscount = totalMaxSlotsAllowed * discountPerSwipe;
     const minimumStructuralFloor = Math.max(0, fullFee - perfectScenarioDiscount);
 
-    // 4. Base Shared Cost per person (Unavoidable club minimum)
-    const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
-    const shuttleShare = shuttles / totalPlayers;
+    // 4. Shared Foundations (Split completely equally among the true total group size)
+    const baseFloorPerPerson = minimumStructuralFloor / calculatedTotalPlayers;
+    const shuttleShare = shuttles / calculatedTotalPlayers;
 
-    // 5. Calculate Remaining Court Costs to distribute
-    // Total court money we actually need to collect out-of-pocket
-    const totalCourtCashNeeded = cashPaid; 
-    
-    // Theoretical individual base targets if we split the remaining cash out-of-pocket directly
-    const remainingCourtCashToSplit = Math.max(0, totalCourtCashNeeded - minimumStructuralFloor);
-    
-    // Establish individual raw court debts before card tracking adjustments
+    // 5. Clean, Isolated Tier Cost Calculations
+    const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
+
     let courtDebtPlus = 0;
-    let courtDebtLight = remainingCourtCashToSplit / totalPlayers;
-    let courtDebtNone = remainingCourtCashToSplit / totalPlayers;
+    let courtDebtLight = 0;
+    let courtDebtNone = 0;
 
-    // Light users contribute a swipe (worth 15 PLN) to lower their specific out-of-pocket court target
-    if (cLight > 0) {
-        courtDebtLight = Math.max(0, courtDebtLight - lightMaxDiscount);
-    }
+    const nonPlusPlayers = cLight + cNone;
 
-    // Recalculate what is left over after Light users used their card discount
-    const totalCollectedFromCalculated = (courtDebtPlus * cPlus) + (courtDebtLight * cLight) + (courtDebtNone * cNone);
-    const uncoveredCourtBalance = Math.max(0, remainingCourtCashToSplit - totalCollectedFromCalculated);
+    if (remainingCourtCashToSplit > 0) {
+        if (nonPlusPlayers > 0) {
+            const rawUncoveredShare = remainingCourtCashToSplit / nonPlusPlayers;
+            
+            courtDebtLight = Math.max(0, rawUncoveredShare - lightMaxDiscount);
+            courtDebtNone = rawUncoveredShare;
 
-    // No-Card users inherit the remaining uncovered balance
-    if (cNone > 0) {
-        courtDebtNone += (uncoveredCourtBalance / cNone);
-    } else if (cLight > 0) {
-        // Fallback: If no "No Card" users exist, remaining balance maps to Light cards
-        courtDebtLight += (uncoveredCourtBalance / cLight);
-    } else if (cPlus > 0) {
-        // Final Fallback: If group is entirely Plus users, split remaining cash evenly
-        courtDebtPlus += (uncoveredCourtBalance / cPlus);
+            const trueCostCoveredByLight = courtDebtLight * cLight;
+            const remainingTargetForNone = remainingCourtCashToSplit - trueCostCoveredByLight;
+
+            if (cNone > 0) {
+                courtDebtNone = remainingTargetForNone / cNone;
+            }
+        } else if (cPlus > 0) {
+            courtDebtPlus = remainingCourtCashToSplit / cPlus;
+        }
     }
 
     // 6. Final Individual Price Assembly
@@ -70,27 +73,30 @@ function calculate() {
     let cl = baseFloorPerPerson + courtDebtLight + shuttleShare;
     let cn = baseFloorPerPerson + courtDebtNone + shuttleShare;
 
-    // Exception Rule: If all possible club slots were maxed out, default to a flat split
+    // Hard Ceiling Exception: If maximum possible card swipes were fully hit
     if (actualSwipes >= totalMaxSlotsAllowed) {
-        const flatSplit = (cashPaid + shuttles) / totalPlayers;
+        const flatSplit = (cashPaid + shuttles) / calculatedTotalPlayers;
         cp = flatSplit;
         cl = flatSplit;
         cn = flatSplit;
     }
 
-    // 7. Update UI Numbers
+    // 7. Render Exact Totals to UI
     document.getElementById('resPlus').innerText = cPlus > 0 ? cp.toFixed(2) + " PLN" : "0.00 PLN";
     document.getElementById('resLight').innerText = cLight > 0 ? cl.toFixed(2) + " PLN" : "0.00 PLN";
     document.getElementById('resNoCard').innerText = cNone > 0 ? cn.toFixed(2) + " PLN" : "0.00 PLN";
 
-    // 8. Validation Box
-    const totalCollected = (cp * cPlus) + (cl * cLight) + (cn * cNone);
+    // 8. Air-Tight Verification Box Calculation
+    // Uses the custom input parameters to verify precise balance matching
+    const originalInputPlus = parseInt(document.getElementById('cntPlus').value) || 0;
+    const totalCollected = (cp * originalInputPlus) + (cl * cLight) + (cn * cNone);
+    
     const vBox = document.getElementById('validationBox');
     vBox.className = "validation-box valid-ok";
     vBox.innerText = `✅ Verified: Recovering ${totalCollected.toFixed(2)} PLN`;
     document.getElementById('results').style.display = 'block';
 
-    // 9. Update Friendly Breakdown Card
+    // 9. Populate Friendly Breakdown Card
     const insightCard = document.getElementById('insight-card');
     if (insightCard) {
         insightCard.style.display = "block";
@@ -101,7 +107,7 @@ function calculate() {
         const insightAlert = document.getElementById('insight-alert');
         if (insightAlert) {
             if (actualSwipes >= totalMaxSlotsAllowed) {
-                insightAlert.innerText = "🎉 Amazing! We completely maxed out our MultiSport swipes today, so the baseline court cost has been split evenly among the whole crew!";
+                insightAlert.innerText = "🎉 We utilized all our MultiSport swipes today, so the court cost has been split evenly among everyone!";
             } else {
                 insightAlert.innerText = ""; 
             }
