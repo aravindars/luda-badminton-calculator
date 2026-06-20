@@ -11,7 +11,6 @@ function calculate() {
     const cLight = parseInt(document.getElementById('cntLight').value) || 0;
     const cNone = parseInt(document.getElementById('cntNone').value) || 0;
     
-    // Explicit manual input count is the absolute truth for splitting global foundations
     const totalPlayers = cPlus + cLight + cNone;
     if (totalPlayers === 0) return;
 
@@ -29,7 +28,7 @@ function calculate() {
     const perfectScenarioDiscount = totalMaxSlotsAllowed * discountPerSwipe;
     const minimumStructuralFloor = Math.max(0, fullFee - perfectScenarioDiscount);
 
-    // 4. Shared Foundations (Split equally among everyone)
+    // 4. Shared Foundations (Split completely equally among the true player count)
     const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
     const shuttleShare = shuttles / totalPlayers;
 
@@ -55,67 +54,59 @@ function calculate() {
             courtDebtLight = (lightDeficitPerPerson / totalDeficitPool) * remainingCourtCashToSplit;
             courtDebtNone = (noneDeficitPerPerson / totalDeficitPool) * remainingCourtCashToSplit;
         } else {
-            // Fallback if the group is entirely Plus cards but a cash remainder still exists
             courtDebtPlus = remainingCourtCashToSplit / totalPlayers;
             courtDebtLight = remainingCourtCashToSplit / totalPlayers;
             courtDebtNone = remainingCourtCashToSplit / totalPlayers;
         }
     }
 
-    // 6. Preliminary Individual Price Assembly
-    let cp = baseFloorPerPerson + courtDebtPlus + shuttleShare; 
-    let cl = baseFloorPerPerson + courtDebtLight + shuttleShare;
-    let cn = baseFloorPerPerson + courtDebtNone + shuttleShare;
+    // 6. Base Final Price Calculations (Unrounded raw numeric format)
+    let finalPlus = baseFloorPerPerson + courtDebtPlus + shuttleShare; 
+    let finalLight = baseFloorPerPerson + courtDebtLight + shuttleShare;
+    let finalNone = baseFloorPerPerson + courtDebtNone + shuttleShare;
 
     // Hard Ceiling Exception: If maximum possible card swipes were fully hit
     if (actualSwipes >= totalMaxSlotsAllowed) {
         const flatSplit = (cashPaid + shuttles) / totalPlayers;
-        cp = flatSplit;
-        cl = flatSplit;
-        cn = flatSplit;
+        finalPlus = flatSplit;
+        finalLight = flatSplit;
+        finalNone = flatSplit;
     }
 
-    // Rounding Mitigation: Force raw calculated shares to exact 2-decimal rounded targets
-    let roundedCp = parseFloat(cp.toFixed(2));
-    let roundedCl = parseFloat(cl.toFixed(2));
-    let roundedCn = parseFloat(cn.toFixed(2));
+    // Convert values directly into strict float structures rounded to two decimal places
+    let roundedPlus = Math.round(finalPlus * 100) / 100;
+    let roundedLight = Math.round(finalLight * 100) / 100;
+    let roundedNone = Math.round(finalNone * 100) / 100;
 
-    // Calculate total money collected based on rounded individual pricing targets
-    let totalTargetToRecover = cashPaid + shuttles;
-    let calculatedTotal = (roundedCp * cPlus) + (roundedCl * cLight) + (roundedCn * cNone);
-    let roundingVariance = totalTargetToRecover - calculatedTotal;
+    // 7. Micro-Penny Rounding Variance Verification
+    const totalTargetToRecover = cashPaid + shuttles;
+    const initialCheckSum = (roundedPlus * cPlus) + (roundedLight * cLight) + (roundedNone * cNone);
+    const variance = totalTargetToRecover - initialCheckSum;
 
-    // Absorb minor decimal rounding variance cleanly into the No-Card tier (or fallback tiers)
-    if (Math.abs(roundingVariance) > 0.001) {
-        if (cNone > 0) {
-            roundedCn += (roundingVariance / cNone);
-        } else if (cLight > 0) {
-            roundedCl += (roundingVariance / cLight);
-        } else if (cPlus > 0) {
-            roundedCp += (roundingVariance / cPlus);
-        }
+    // Direct penny patching on the No Card tier to secure exact calculation balance
+    if (Math.abs(variance) > 0.001 && cNone > 0) {
+        roundedNone = Math.round((roundedNone + (variance / cNone)) * 100) / 100;
     }
 
-    // 7. Render Exact Totals to UI
-    document.getElementById('resPlus').innerText = cPlus > 0 ? roundedCp.toFixed(2) + " PLN" : "0.00 PLN";
-    document.getElementById('resLight').innerText = cLight > 0 ? roundedCl.toFixed(2) + " PLN" : "0.00 PLN";
-    document.getElementById('resNoCard').innerText = cNone > 0 ? roundedCn.toFixed(2) + " PLN" : "0.00 PLN";
+    // 8. Render Correct Independent Totals to UI
+    document.getElementById('resPlus').innerText = cPlus > 0 ? `${roundedPlus.toFixed(2)} PLN` : "0.00 PLN";
+    document.getElementById('resLight').innerText = cLight > 0 ? `${roundedLight.toFixed(2)} PLN` : "0.00 PLN";
+    document.getElementById('resNoCard').innerText = cNone > 0 ? `${roundedNone.toFixed(2)} PLN` : "0.00 PLN";
 
-    // 8. Air-Tight Verification Box Calculation
-    const finalVerifiedTotal = (roundedCp * cPlus) + (roundedCl * cLight) + (roundedCn * cNone);
+    // 9. Air-Tight Verification Box Calculation
+    const finalVerifiedTotal = (roundedPlus * cPlus) + (roundedLight * cLight) + (roundedNone * cNone);
     const vBox = document.getElementById('validationBox');
     vBox.className = "validation-box valid-ok";
     vBox.innerText = `✅ Verified: Recovering ${finalVerifiedTotal.toFixed(2)} PLN`;
     document.getElementById('results').style.display = 'block';
 
-    // 9. Populate Friendly Breakdown Card with Accurate Contextual Text Labels
+    // 10. Populate Friendly Breakdown Card with Accurate Text Labels
     const insightCard = document.getElementById('insight-card');
     if (insightCard) {
         insightCard.style.display = "block";
         document.getElementById('floor-val').innerText = minimumStructuralFloor.toFixed(2);
         document.getElementById('shuttle-val').innerText = shuttles.toFixed(2);
         
-        // Explicitly updates the Uncovered Balance text to match our proportional deficit logic
         const penaltyLabelElement = document.getElementById('penalty-val').parentElement;
         if (penaltyLabelElement) {
             let labelText = `• <strong>Uncovered Court Balance:</strong> <span id="penalty-val">${remainingCourtCashToSplit.toFixed(2)}</span> PLN `;
