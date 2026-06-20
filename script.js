@@ -1,10 +1,12 @@
 function calculate() {
-    // 1. Get Inputs
+    // 1. Get Inputs (Using your exact existing IDs from index.html)
     const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
     const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
     const shuttles = parseFloat(document.getElementById('shuttleCost').value) || 0;
     const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
-    
+    const courts = parseInt(document.getElementById('courts').value) || 1; 
+    const actualSwipes = parseInt(document.getElementById('actualSwipes').value) || 0;
+
     const cPlus = parseInt(document.getElementById('cntPlus').value) || 0;
     const cLight = parseInt(document.getElementById('cntLight').value) || 0;
     const cNone = parseInt(document.getElementById('cntNone').value) || 0;
@@ -12,57 +14,80 @@ function calculate() {
     const totalPlayers = cPlus + cLight + cNone;
     if (totalPlayers === 0) return;
 
-    // 2. Per-Person Base Share calculation
-    const perPersonFullCourtShare = fullFee / totalPlayers; 
-    const shuttleShare = shuttles / totalPlayers;
-
-    // 3. Define Discounts
-    const plusMaxDiscount = Math.max(1, Math.floor(hours)) * 15.0; // e.g. 30 PLN
+    // 2. Dynamic Labels setup (Kept original label functionality)
+    const plusMaxDiscount = Math.max(1, Math.floor(hours)) * 15.0; 
     const lightMaxDiscount = 15.0;
-
-    // 4. Calculate Individual Court Debt (Capped by the per-person share)
-    // No-Card owes full share
-    const courtDebtNone = perPersonFullCourtShare; 
-    // Card users owe share minus discount (but never less than 0)
-    const courtDebtPlus = Math.max(0, perPersonFullCourtShare - plusMaxDiscount);
-    const courtDebtLight = Math.max(0, perPersonFullCourtShare - lightMaxDiscount);
-
-    // 5. Scaling Logic
-    // Calculate total theoretical revenue from court debt
-    const totalCalculatedCourtRevenue = (courtDebtPlus * cPlus) + (courtDebtLight * cLight) + (courtDebtNone * cNone);
-
-    // Scale the debt to match what we actually paid out-of-pocket (Cash Paid)
-    let scale = 1;
-let flatCashSharePerCardUser = 0;
-
-if (totalCalculatedCourtRevenue > 0) {
-    scale = cashPaid / totalCalculatedCourtRevenue;
-} else if (cashPaid > 0 && totalCalculatedCourtRevenue === 0) {
-    // BUG FIX: If everyone's discount reduced court debt to 0, 
-    // but there is still remaining cash paid, split that cash equally among card users.
-    const totalCardUsers = cPlus + cLight;
-    if (totalCardUsers > 0) {
-        flatCashSharePerCardUser = cashPaid / totalCardUsers;
-    }
-}
-
-    // 6. Final Prices (Scaled Court Debt + Shuttle Share)
-    const cp = (courtDebtPlus * scale) + flatCashSharePerCardUser + shuttleShare;
-const cl = (courtDebtLight * scale) + flatCashSharePerCardUser + shuttleShare;
-const cn = (courtDebtNone * scale) + shuttleShare;
-    // 7. Apply Results to UI
     document.getElementById('plusLabel').innerText = `PLUS (max ${plusMaxDiscount} PLN off court)`;
     document.getElementById('lightLabel').innerText = `LIGHT (max ${lightMaxDiscount} PLN off court)`;
 
-    // Update UI - Only show values if player count > 0 to avoid confusion
+    // 3. MultiSport Structural Rule Calculations (Max 4 swipes per court per hour)
+    const maxSwipesPerCourtPerHour = 4;
+    const totalMaxSlotsAllowed = courts * maxSwipesPerCourtPerHour * hours;
+
+    // Calculate minimum unavoidable cash floor (if all slots had been maxed out with Plus cards)
+    const discountPerSwipe = 15; 
+    const perfectScenarioDiscount = totalMaxSlotsAllowed * discountPerSwipe;
+    const minimumStructuralFloor = Math.max(0, fullFee - perfectScenarioDiscount);
+
+    // 4. Distribute that unavoidable base fee floor equally among EVERYONE
+    const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
+
+    // 5. Handle any remaining cash paid (uncovered court balance caused by missing cards)
+    const remainingCashPenalty = Math.max(0, cashPaid - minimumStructuralFloor);
+    const totalNoCardOrLightUsers = cLight + cNone; 
+
+    let penaltyPerNoCardUser = 0;
+    if (remainingCashPenalty > 0 && totalNoCardOrLightUsers > 0) {
+        // Shared exclusively among those who couldn't scan a full Plus card
+        penaltyPerNoCardUser = remainingCashPenalty / totalNoCardOrLightUsers;
+    } else if (remainingCashPenalty > 0 && totalNoCardOrLightUsers === 0) {
+        // Fallback if everyone is a Plus card user but the facility still required a cash remainder
+        penaltyPerNoCardUser = remainingCashPenalty / totalPlayers;
+    }
+
+    // 6. Calculate even split for shuttles
+    const shuttleShare = shuttles / totalPlayers;
+
+    // 7. Final Individual Price Construction
+    let cp = baseFloorPerPerson + shuttleShare; 
+    let cl = baseFloorPerPerson + penaltyPerNoCardUser + shuttleShare;
+    let cn = baseFloorPerPerson + penaltyPerNoCardUser + shuttleShare;
+
+    // Clean Exception: If actual swipes hit or exceed the facility's hard ceiling, split flatly
+    if (actualSwipes >= totalMaxSlotsAllowed) {
+        const flatSplit = (cashPaid + shuttles) / totalPlayers;
+        cp = flatSplit;
+        cl = flatSplit;
+        cn = flatSplit;
+    }
+
+    // 8. Update UI - Only show values if player count > 0 to avoid confusion
     document.getElementById('resPlus').innerText = cPlus > 0 ? cp.toFixed(2) + " PLN" : "0.00 PLN";
     document.getElementById('resLight').innerText = cLight > 0 ? cl.toFixed(2) + " PLN" : "0.00 PLN";
     document.getElementById('resNoCard').innerText = cNone > 0 ? cn.toFixed(2) + " PLN" : "0.00 PLN";
 
-    // 8. Validation
+    // 9. Validation Box
     const totalCollected = (cp * cPlus) + (cl * cLight) + (cn * cNone);
     const vBox = document.getElementById('validationBox');
     vBox.className = "validation-box valid-ok";
     vBox.innerText = `✅ Verified: Recovering ${totalCollected.toFixed(2)} PLN`;
     document.getElementById('results').style.display = 'block';
+
+    // 10. Dynamically populate the friendly breakdown card
+    const insightCard = document.getElementById('insight-card');
+    if (insightCard) {
+        insightCard.style.display = "block";
+        document.getElementById('floor-val').innerText = minimumStructuralFloor.toFixed(2);
+        document.getElementById('penalty-val').innerText = remainingCashPenalty.toFixed(2);
+        document.getElementById('shuttle-val').innerText = shuttles.toFixed(2);
+        
+        const insightAlert = document.getElementById('insight-alert');
+        if (insightAlert) {
+            if (actualSwipes >= totalMaxSlotsAllowed) {
+                insightAlert.innerText = "🎉 Amazing! We completely maxed out our MultiSport swipes today, so the baseline court cost has been split evenly among the whole crew!";
+            } else {
+                insightAlert.innerText = ""; 
+            }
+        }
+    }
 }
