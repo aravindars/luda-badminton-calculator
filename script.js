@@ -1,3 +1,4 @@
+// --- THE MAIN CALCULATION ENGINE ---
 function calculate() {
     // 1. Inputs
     const fullFee = parseFloat(document.getElementById('fullFee').value) || 0;
@@ -16,18 +17,14 @@ function calculate() {
     
     if (totalPlayers === 0) return;
 
-    // 2. Dynamic Max Value Configs
+    // 2. MultiSport Limits
     const plusMaxDiscount = Math.max(1, Math.floor(hours)) * 15.0; 
     const lightMaxDiscount = 15.0;
-    document.getElementById('plusLabel').innerText = `PLUS (max ${plusMaxDiscount} PLN off court)`;
-    document.getElementById('lightLabel').innerText = `LIGHT (max ${lightMaxDiscount} PLN off court)`;
-
-    // 3. MultiSport Limits
     const maxSwipesPerCourtPerHour = 4;
     const totalMaxSlotsAllowed = courts * maxSwipesPerCourtPerHour * hours;
     const minimumStructuralFloor = Math.max(0, fullFee - (totalMaxSlotsAllowed * 15));
 
-    // --- LIVE WARNING SYSTEM ---
+    // --- LIVE WARNING SYSTEM (Kept live for immediate input checks) ---
     const expectedPlusSwipes = cPlus * hours;
     const expectedLightSwipes = cLight * 1;
     const theoreticalSwipes = Math.min(expectedPlusSwipes + expectedLightSwipes, totalMaxSlotsAllowed);
@@ -45,7 +42,7 @@ function calculate() {
         warningBox.style.display = "none";
     }
 
-    // 4. Main Engine Switching Logic
+    // 3. Main Engine Switching Logic
     let finalPlus = 0, finalLight = 0, finalNone = 0;
     const flatShareOfCourt = fullFee / totalPlayers;
     const shuttleShare = shuttles / totalPlayers;
@@ -77,17 +74,15 @@ function calculate() {
         finalLight = baseFloorPerPerson + courtDebtLight + shuttleShare;
         finalNone = baseFloorPerPerson + courtDebtNone + shuttleShare;
     } else {
-        // ENGINE B: LUDA'S CLEAR (Capped to Flat Share)
+        // ENGINE B: LUDA'S CLEAR
         const noCardRate = flatShareOfCourt;
         
-        // BUG FIX 1: Cap discounts so they never push court components negative
         const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
         const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
 
         const actualLightDiscount = flatShareOfCourt - lightCardRate;
         const actualPlusDiscount = flatShareOfCourt - plusCardRate;
 
-        // BUG FIX 2: Calculate true surplus without negative math leakage
         const totalCourtCashCollected = (noCardRate * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
         const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
         const adjustedShuttlePool = Math.max(0, shuttles - surplusCash);
@@ -98,7 +93,7 @@ function calculate() {
         finalNone = noCardRate + ludaShuttleShare;
     }
 
-    // 5. Penny Patch Rounding Balance
+    // 4. Penny Patch Rounding Balance
     let roundedPlus = Math.round(finalPlus * 100) / 100;
     let roundedLight = Math.round(finalLight * 100) / 100;
     let roundedNone = Math.round(finalNone * 100) / 100;
@@ -111,18 +106,19 @@ function calculate() {
         roundedNone = Math.round((roundedNone + (variance / cNone)) * 100) / 100;
     }
 
-    // 6. Print Outputs
+    // 5. Print Split Outputs
     document.getElementById('resPlus').innerText = cPlus > 0 ? `${roundedPlus.toFixed(2)} PLN` : "0.00 PLN";
     document.getElementById('resLight').innerText = cLight > 0 ? `${roundedLight.toFixed(2)} PLN` : "0.00 PLN";
     document.getElementById('resNoCard').innerText = cNone > 0 ? `${roundedNone.toFixed(2)} PLN` : "0.00 PLN";
 
-    // 7. Validation Box
+    // 6. Print Validation Message (Now reveals cleanly here)
     const finalVerifiedTotal = (roundedPlus * cPlus) + (roundedLight * cLight) + (roundedNone * cNone);
     const vBox = document.getElementById('validationBox');
+    vBox.style.display = "block";
     vBox.className = "validation-box valid-ok";
     vBox.innerText = `✅ Verified: Recovering ${finalVerifiedTotal.toFixed(2)} PLN`;
 
-    // 8. Dynamic Breakdown Copy Generation
+    // 7. Dynamic Breakdown Copy Generation
     const breakdownContent = document.getElementById('breakdownContent');
     if (isCrossDropMode) {
         const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
@@ -136,8 +132,13 @@ function calculate() {
                 💡 Everyone splits the core court fee and shuttles. Only cardless and light users pay proportionately for missing swipes.
             </div>`;
     } else {
+        const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
+        const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
+        const actualLightDiscount = flatShareOfCourt - lightCardRate;
+        const actualPlusDiscount = flatShareOfCourt - plusCardRate;
         const totalCourtCashCollected = (flatShareOfCourt * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
         const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
+
         breakdownContent.innerHTML = `
             <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.7; font-size: 13px; color: #334155;">
                 <li>• <strong>Original Court Price:</strong> <strong>${fullFee.toFixed(2)}</strong> PLN</li>
@@ -157,7 +158,15 @@ function calculate() {
     }
 }
 
-// 9. Instant Sync Toggle and Live Form Inputs
+// --- LIVE MAX LABEL TRACKER (Updates headers quietly without running math) ---
+function updateMaxLabels() {
+    const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
+    const plusMaxDiscount = Math.max(1, Math.floor(hours)) * 15.0; 
+    document.getElementById('plusLabel').innerText = `PLUS (max ${plusMaxDiscount} PLN off court)`;
+    document.getElementById('lightLabel').innerText = `LIGHT (max 15.00 PLN off court)`;
+}
+
+// 8. Mode Selector Change Hook
 document.getElementById('modeToggle').addEventListener('change', function() {
     const title = document.getElementById('modeTitle');
     const sub = document.getElementById('modeSub');
@@ -168,11 +177,28 @@ document.getElementById('modeToggle').addEventListener('change', function() {
         title.innerText = "🏸 Mode: Luda's Clear";
         sub.innerText = "Fixed fee for no-card players. Extra money discounts the shuttles.";
     }
-    calculate();
+    // Mode changing clears current output screen so user knows they must recalculate explicitly
+    document.getElementById('validationBox').style.display = "none";
+    document.getElementById('breakdownContent').innerHTML = `<p style="color:#64748b; font-size:12px; font-style:italic;">Mode changed. Click 'Calculate Fair Split' to generate session information.</p>`;
 });
 
+// 9. Attach Calculation and Breakdown strictly to the Action Button Click
+// Look for your button ID in index.html. If it doesn't have an id, add id="calcBtn" or update this querySelector.
+const calcBtn = document.getElementById('calcBtn') || document.querySelector('button');
+if (calcBtn) {
+    calcBtn.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevents accidental page refreshes
+        calculate();
+    });
+}
+
+// Keep updating labels quietly when hour inputs scale
 document.querySelectorAll('input, select').forEach(element => {
-    element.addEventListener('input', calculate);
+    element.addEventListener('input', updateMaxLabels);
 });
 
-window.onload = calculate;
+// Setup on first draw
+window.onload = function() {
+    updateMaxLabels();
+    document.getElementById('validationBox').style.display = "none";
+};
