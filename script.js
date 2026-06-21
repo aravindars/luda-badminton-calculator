@@ -11,7 +11,8 @@ function calculate() {
     const cLight = parseInt(document.getElementById('cntLight').value) || 0;
     const cNone = parseInt(document.getElementById('cntNone').value) || 0;
     
-    const isDropMode = document.getElementById('modeToggle').checked;
+    // Updated variable naming to reflect your badminton rebrand
+    const isCrossDropMode = document.getElementById('modeToggle').checked;
     const totalPlayers = cPlus + cLight + cNone;
     
     if (totalPlayers === 0) return;
@@ -56,8 +57,8 @@ function calculate() {
     if (isHardCeilingActive) {
         const flatSplit = (cashPaid + shuttles) / totalPlayers;
         finalPlus = finalLight = finalNone = flatSplit;
-    } else if (isDropMode) {
-        // ENGINE A: ARAVIND'S DROP
+    } else if (isCrossDropMode) {
+        // ENGINE A: ARAVIND'S CROSS DROP
         const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
         const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
         let courtDebtPlus = 0, courtDebtLight = 0, courtDebtNone = 0;
@@ -119,7 +120,7 @@ function calculate() {
 
     // 8. Dynamic Breakdown Copy Generation
     const breakdownContent = document.getElementById('breakdownContent');
-    if (isDropMode) {
+    if (isCrossDropMode) {
         const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
         breakdownContent.innerHTML = `
             <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.7; font-size: 13px; color: #334155;">
@@ -157,7 +158,7 @@ document.getElementById('modeToggle').addEventListener('change', function() {
     const title = document.getElementById('modeTitle');
     const sub = document.getElementById('modeSub');
     if (this.checked) {
-        title.innerText = "💧 Mode: Aravind's Drop";
+        title.innerText = "🏸 Mode: Aravind's Cross Drop";
         sub.innerText = "Court fee on top of max-swipes split by all. Missing swipes paid proportionately by no-card and light users.";
     } else {
         title.innerText = "🏸 Mode: Luda's Clear";
