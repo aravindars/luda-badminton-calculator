@@ -74,20 +74,27 @@ function calculate() {
         finalLight = baseFloorPerPerson + courtDebtLight + shuttleShare;
         finalNone = baseFloorPerPerson + courtDebtNone + shuttleShare;
     } else {
-        // ENGINE B: LUDA'S CLEAR
+        // ENGINE B: LUDA'S CLEAR (Capped to Flat Share)
         const noCardRate = flatShareOfCourt;
         
+        // 1. Cap individual components at 0
         const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
         const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
 
         const actualLightDiscount = flatShareOfCourt - lightCardRate;
         const actualPlusDiscount = flatShareOfCourt - plusCardRate;
 
+        // 2. Calculate court cash collected based on capped rates
         const totalCourtCashCollected = (noCardRate * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
+        
+        // 3. FIX: Surplus cash is only what we collected OVER the cashPaid bill
         const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
+        
+        // 4. THE ULTIMATE BUG FIX: Force the shuttle share to cap at exactly 0.00 if covered by surplus!
         const adjustedShuttlePool = Math.max(0, shuttles - surplusCash);
         const ludaShuttleShare = adjustedShuttlePool / totalPlayers;
 
+        // 5. Final assignment (Plus will now be 0.00 court + 0.00 shuttles = 0.00 PLN!)
         finalPlus = plusCardRate + ludaShuttleShare;
         finalLight = lightCardRate + ludaShuttleShare;
         finalNone = noCardRate + ludaShuttleShare;
