@@ -11,7 +11,6 @@ function calculate() {
     const cLight = parseInt(document.getElementById('cntLight').value) || 0;
     const cNone = parseInt(document.getElementById('cntNone').value) || 0;
     
-    // Updated variable naming to reflect your badminton rebrand
     const isCrossDropMode = document.getElementById('modeToggle').checked;
     const totalPlayers = cPlus + cLight + cNone;
     
@@ -51,7 +50,6 @@ function calculate() {
     const flatShareOfCourt = fullFee / totalPlayers;
     const shuttleShare = shuttles / totalPlayers;
 
-    // Handle hard ceiling logic correctly without overriding standard behavior unless actually maxed
     const isHardCeilingActive = (actualSwipes >= totalMaxSlotsAllowed && minimumStructuralFloor === cashPaid);
 
     if (isHardCeilingActive) {
@@ -79,13 +77,19 @@ function calculate() {
         finalLight = baseFloorPerPerson + courtDebtLight + shuttleShare;
         finalNone = baseFloorPerPerson + courtDebtNone + shuttleShare;
     } else {
-        // ENGINE B: LUDA'S CLEAR
+        // ENGINE B: LUDA'S CLEAR (Capped to Flat Share)
         const noCardRate = flatShareOfCourt;
-        const lightCardRate = Math.max(0, flatShareOfCourt - lightMaxDiscount);
-        const plusCardRate = Math.max(0, flatShareOfCourt - plusMaxDiscount);
+        
+        // BUG FIX 1: Cap discounts so they never push court components negative
+        const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
+        const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
 
+        const actualLightDiscount = flatShareOfCourt - lightCardRate;
+        const actualPlusDiscount = flatShareOfCourt - plusCardRate;
+
+        // BUG FIX 2: Calculate true surplus without negative math leakage
         const totalCourtCashCollected = (noCardRate * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
-        const surplusCash = totalCourtCashCollected - cashPaid;
+        const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
         const adjustedShuttlePool = Math.max(0, shuttles - surplusCash);
         const ludaShuttleShare = adjustedShuttlePool / totalPlayers;
 
@@ -132,16 +136,16 @@ function calculate() {
                 💡 Everyone splits the core court fee and shuttles. Only cardless and light users pay proportionately for missing swipes.
             </div>`;
     } else {
-        const totalCourtCashCollected = (flatShareOfCourt * cNone) + (Math.max(0, flatShareOfCourt - lightMaxDiscount) * cLight) + (Math.max(0, flatShareOfCourt - plusMaxDiscount) * cPlus);
-        const surplusCash = totalCourtCashCollected - cashPaid;
+        const totalCourtCashCollected = (flatShareOfCourt * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
+        const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
         breakdownContent.innerHTML = `
             <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.7; font-size: 13px; color: #334155;">
                 <li>• <strong>Original Court Price:</strong> <strong>${fullFee.toFixed(2)}</strong> PLN</li>
                 <li>• <strong>Standard Court Rates:</strong>
                     <div style="padding-left: 10px; color: #64748b; font-size: 11px;">
                         No-Card User: ${flatShareOfCourt.toFixed(2)} PLN <em>(Flat share)</em><br>
-                        Light User: ${Math.max(0, flatShareOfCourt - lightMaxDiscount).toFixed(2)} PLN <em>(Flat share - 15)</em><br>
-                        Plus User: ${Math.max(0, flatShareOfCourt - plusMaxDiscount).toFixed(2)} PLN <em>(Flat share - ${plusMaxDiscount})</em>
+                        Light User: ${lightCardRate.toFixed(2)} PLN <em>(Flat share - ${actualLightDiscount.toFixed(2)})</em><br>
+                        Plus User: ${plusCardRate.toFixed(2)} PLN <em>(Flat share - ${actualPlusDiscount.toFixed(2)})</em>
                     </div>
                 </li>
                 <li>• <strong>Shuttle Cost Pool:</strong> <strong>${shuttles.toFixed(2)}</strong> PLN</li>
@@ -167,10 +171,8 @@ document.getElementById('modeToggle').addEventListener('change', function() {
     calculate();
 });
 
-// Watch inputs dynamically to remove click requirement entirely
 document.querySelectorAll('input, select').forEach(element => {
     element.addEventListener('input', calculate);
 });
 
-// Run initial instance setup on page draw
 window.onload = calculate;
