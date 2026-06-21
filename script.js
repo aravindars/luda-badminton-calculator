@@ -33,16 +33,18 @@ function calculate() {
     const warningBox = document.getElementById('warningBox');
     const inputDifference = cashPaid - expectedCashBill;
     
-    if (Math.abs(inputDifference) > 0.05) {
-        warningBox.style.display = "block";
-        document.getElementById('warnExpected').innerText = expectedCashBill.toFixed(2);
-        document.getElementById('warnEntered').innerText = cashPaid.toFixed(2);
-        document.getElementById('warnDiff').innerText = (inputDifference > 0 ? "+" : "") + inputDifference.toFixed(2);
-    } else {
-        warningBox.style.display = "none";
+    if (warningBox) {
+        if (Math.abs(inputDifference) > 0.05) {
+            warningBox.style.display = "block";
+            document.getElementById('warnExpected').innerText = expectedCashBill.toFixed(2);
+            document.getElementById('warnEntered').innerText = cashPaid.toFixed(2);
+            document.getElementById('warnDiff').innerText = (inputDifference > 0 ? "+" : "") + inputDifference.toFixed(2);
+        } else {
+            warningBox.style.display = "none";
+        }
     }
 
-// ==========================================
+    // ==========================================
     // 3. Main Calculation Logic
     // ==========================================
     let finalPlus = 0, finalLight = 0, finalNone = 0;
@@ -54,11 +56,9 @@ function calculate() {
         const isHardCeilingActive = (actualSwipes >= totalMaxSlotsAllowed && minimumStructuralFloor === cashPaid);
 
         if (isHardCeilingActive) {
-            // Aravind mode collapses to a flat split only if court rules structurally mandate it
             const flatSplit = (cashPaid + shuttles) / totalPlayers;
             finalPlus = finalLight = finalNone = flatSplit;
         } else {
-            // Standard Aravind math
             const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
             const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
             let courtDebtPlus = 0, courtDebtLight = 0, courtDebtNone = 0;
@@ -81,7 +81,7 @@ function calculate() {
         }
         
     } else {
-        // ENGINE B: LUDA'S CLEAR (Completely safe from swipe overrides!)
+        // ENGINE B: LUDA'S CLEAR
         const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
         const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
         const noCardRate = flatShareOfCourt;
@@ -114,17 +114,26 @@ function calculate() {
         finalNone = finalCourtNone + ludaShuttleShare;
     }
 
-    // 4. Penny Patch Rounding Balance
+    // ==========================================
+    // 4. Smart Penny Patch Rounding Balance
+    // ==========================================
     let roundedPlus = Math.round(finalPlus * 100) / 100;
     let roundedLight = Math.round(finalLight * 100) / 100;
     let roundedNone = Math.round(finalNone * 100) / 100;
 
     const totalTargetToRecover = cashPaid + shuttles;
-    const initialCheckSum = (roundedPlus * cPlus) + (roundedLight * cLight) + (roundedNone * cNone);
-    const variance = totalTargetToRecover - initialCheckSum;
+    let initialCheckSum = (roundedPlus * cPlus) + (roundedLight * cLight) + (roundedNone * cNone);
+    let variance = totalTargetToRecover - initialCheckSum;
 
-    if (Math.abs(variance) > 0.001 && cNone > 0) {
-        roundedNone = Math.round((roundedNone + (variance / cNone)) * 100) / 100;
+    // Distribute remaining pennies safely across available player pools
+    if (Math.abs(variance) > 0.001) {
+        if (cNone > 0) {
+            roundedNone = Math.round((roundedNone + (variance / cNone)) * 100) / 100;
+        } else if (cLight > 0) {
+            roundedLight = Math.round((roundedLight + (variance / cLight)) * 100) / 100;
+        } else if (cPlus > 0) {
+            roundedPlus = Math.round((roundedPlus + (variance / cPlus)) * 100) / 100;
+        }
     }
 
     // 5. Print Split Outputs
@@ -132,54 +141,58 @@ function calculate() {
     document.getElementById('resLight').innerText = cLight > 0 ? `${roundedLight.toFixed(2)} PLN` : "0.00 PLN";
     document.getElementById('resNoCard').innerText = cNone > 0 ? `${roundedNone.toFixed(2)} PLN` : "0.00 PLN";
 
-    // 6. Print Validation Message (Now reveals cleanly here)
+    // 6. Print Validation Message
     const finalVerifiedTotal = (roundedPlus * cPlus) + (roundedLight * cLight) + (roundedNone * cNone);
     const vBox = document.getElementById('validationBox');
-    vBox.style.display = "block";
-    vBox.className = "validation-box valid-ok";
-    vBox.innerText = `✅ Verified: Recovering ${finalVerifiedTotal.toFixed(2)} PLN`;
+    if (vBox) {
+        vBox.style.display = "block";
+        vBox.className = "validation-box valid-ok";
+        vBox.innerText = `✅ Verified: Recovering ${finalVerifiedTotal.toFixed(2)} PLN`;
+    }
 
     // 7. Dynamic Breakdown Copy Generation
     const breakdownContent = document.getElementById('breakdownContent');
-    if (isCrossDropMode) {
-        const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
-        breakdownContent.innerHTML = `
-            <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.7; font-size: 13px; color: #334155;">
-                <li>• <strong>Court fee even after max-swipes:</strong> <strong>${minimumStructuralFloor.toFixed(2)}</strong> PLN <span style="color: #64748b; font-size: 11px;">(Split equally by all)</span></li>
-                <li>• <strong>Missing Swipe Balance:</strong> <strong>${remainingCourtCashToSplit.toFixed(2)}</strong> PLN <span style="color: #64748b; font-size: 11px;">(Paid proportionately only by cardless/light users)</span></li>
-                <li>• <strong>Shuttle Cost Pool:</strong> <strong>${shuttles.toFixed(2)}</strong> PLN <span style="color: #64748b; font-size: 11px;">(Split equally by all)</span></li>
-            </ul>
-            <div style="color: #4338ca; font-weight: bold; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 12px;">
-                💡 Everyone splits the core court fee and shuttles. Only cardless and light users pay proportionately for missing swipes.
-            </div>`;
-    } else {
-        const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
-        const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
-        const actualLightDiscount = flatShareOfCourt - lightCardRate;
-        const actualPlusDiscount = flatShareOfCourt - plusCardRate;
-        const totalCourtCashCollected = (flatShareOfCourt * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
-        const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
+    if (breakdownContent) {
+        if (isCrossDropMode) {
+            const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
+            breakdownContent.innerHTML = `
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.7; font-size: 13px; color: #334155;">
+                    <li>• <strong>Court fee even after max-swipes:</strong> <strong>${minimumStructuralFloor.toFixed(2)}</strong> PLN <span style="color: #64748b; font-size: 11px;">(Split equally by all)</span></li>
+                    <li>• <strong>Missing Swipe Balance:</strong> <strong>${remainingCourtCashToSplit.toFixed(2)}</strong> PLN <span style="color: #64748b; font-size: 11px;">(Paid proportionately only by cardless/light users)</span></li>
+                    <li>• <strong>Shuttle Cost Pool:</strong> <strong>${shuttles.toFixed(2)}</strong> PLN <span style="color: #64748b; font-size: 11px;">(Split equally by all)</span></li>
+                </ul>
+                <div style="color: #4338ca; font-weight: bold; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 12px;">
+                    💡 Everyone splits the core court fee and shuttles. Only cardless and light users pay proportionately for missing swipes.
+                </div>`;
+        } else {
+            const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
+            const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
+            const actualLightDiscount = flatShareOfCourt - lightCardRate;
+            const actualPlusDiscount = flatShareOfCourt - plusCardRate;
+            const totalCourtCashCollected = (flatShareOfCourt * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
+            const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
 
-        breakdownContent.innerHTML = `
-            <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.7; font-size: 13px; color: #334155;">
-                <li>• <strong>Original Court Price:</strong> <strong>${fullFee.toFixed(2)}</strong> PLN</li>
-                <li>• <strong>Standard Court Rates:</strong>
-                    <div style="padding-left: 10px; color: #64748b; font-size: 11px;">
-                        No-Card User: ${flatShareOfCourt.toFixed(2)} PLN <em>(Flat share)</em><br>
-                        Light User: ${lightCardRate.toFixed(2)} PLN <em>(Flat share - ${actualLightDiscount.toFixed(2)})</em><br>
-                        Plus User: ${plusCardRate.toFixed(2)} PLN <em>(Flat share - ${actualPlusDiscount.toFixed(2)})</em>
-                    </div>
-                </li>
-                <li>• <strong>Shuttle Cost Pool:</strong> <strong>${shuttles.toFixed(2)}</strong> PLN</li>
-                <li>• <strong>Extra cash used to reduce shuttle costs for everyone:</strong> <strong style="color: #10b981;">${surplusCash.toFixed(2)}</strong> PLN</li>
-            </ul>
-            <div style="color: #4338ca; font-weight: bold; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 12px;">
-                💡 No-card players pay a flat share of the full court price. Extra cash collected reduces the shuttle bill for everyone.
-            </div>`;
+            breakdownContent.innerHTML = `
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.7; font-size: 13px; color: #334155;">
+                    <li>• <strong>Original Court Price:</strong> <strong>${fullFee.toFixed(2)}</strong> PLN</li>
+                    <li>• <strong>Standard Court Rates:</strong>
+                        <div style="padding-left: 10px; color: #64748b; font-size: 11px;">
+                            No-Card User: ${flatShareOfCourt.toFixed(2)} PLN <em>(Flat share)</em><br>
+                            Light User: ${lightCardRate.toFixed(2)} PLN <em>(Flat share - ${actualLightDiscount.toFixed(2)})</em><br>
+                            Plus User: ${plusCardRate.toFixed(2)} PLN <em>(Flat share - ${actualPlusDiscount.toFixed(2)})</em>
+                        </div>
+                    </li>
+                    <li>• <strong>Shuttle Cost Pool:</strong> <strong>${shuttles.toFixed(2)}</strong> PLN</li>
+                    <li>• <strong>Extra cash used to reduce shuttle costs for everyone:</strong> <strong style="color: #10b981;">${surplusCash.toFixed(2)}</strong> PLN</li>
+                </ul>
+                <div style="color: #4338ca; font-weight: bold; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 12px;">
+                    💡 No-card players pay a flat share of the full court price. Extra cash collected reduces the shuttle bill for everyone.
+                </div>`;
+        }
     }
 }
 
-// --- LIVE MAX LABEL TRACKER (Updates headers quietly without running math) ---
+// --- LIVE MAX LABEL TRACKER ---
 function updateMaxLabels() {
     const hours = parseFloat(document.getElementById('sessionHours').value) || 1;
     const plusMaxDiscount = Math.max(1, Math.floor(hours)) * 15.0; 
@@ -198,28 +211,30 @@ document.getElementById('modeToggle').addEventListener('change', function() {
         title.innerText = "🏸 Mode: Luda's Clear";
         sub.innerText = "Fixed fee for no-card players. Extra money discounts the shuttles.";
     }
-    // Mode changing clears current output screen so user knows they must recalculate explicitly
-    document.getElementById('validationBox').style.display = "none";
-    document.getElementById('breakdownContent').innerHTML = `<p style="color:#64748b; font-size:12px; font-style:italic;">Mode changed. Click 'Calculate Fair Split' to generate session information.</p>`;
+    const vBox = document.getElementById('validationBox');
+    if (vBox) vBox.style.display = "none";
+    
+    const breakdownContent = document.getElementById('breakdownContent');
+    if (breakdownContent) {
+        breakdownContent.innerHTML = `<p style="color:#64748b; font-size:12px; font-style:italic;">Mode changed. Click 'Calculate Fair Split' to generate session information.</p>`;
+    }
 });
 
-// 9. Attach Calculation and Breakdown strictly to the Action Button Click
-// Look for your button ID in index.html. If it doesn't have an id, add id="calcBtn" or update this querySelector.
+// 9. Attach Calculation Actions
 const calcBtn = document.getElementById('calcBtn') || document.querySelector('button');
 if (calcBtn) {
     calcBtn.addEventListener('click', function(e) {
-        e.preventDefault(); // Prevents accidental page refreshes
+        e.preventDefault();
         calculate();
     });
 }
 
-// Keep updating labels quietly when hour inputs scale
 document.querySelectorAll('input, select').forEach(element => {
     element.addEventListener('input', updateMaxLabels);
 });
 
-// Setup on first draw
 window.onload = function() {
     updateMaxLabels();
-    document.getElementById('validationBox').style.display = "none";
+    const vBox = document.getElementById('validationBox');
+    if (vBox) vBox.style.display = "none";
 };
