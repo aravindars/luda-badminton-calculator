@@ -42,74 +42,73 @@ function calculate() {
         warningBox.style.display = "none";
     }
 
-    // 3. Main Engine Switching Logic
+// ==========================================
+    // 3. Main Calculation Logic
+    // ==========================================
     let finalPlus = 0, finalLight = 0, finalNone = 0;
     const flatShareOfCourt = fullFee / totalPlayers;
     const shuttleShare = shuttles / totalPlayers;
 
-    const isHardCeilingActive = (actualSwipes >= totalMaxSlotsAllowed && minimumStructuralFloor === cashPaid);
-
-    if (isHardCeilingActive) {
-        const flatSplit = (cashPaid + shuttles) / totalPlayers;
-        finalPlus = finalLight = finalNone = flatSplit;
-    } else if (isCrossDropMode) {
+    if (isCrossDropMode) {
         // ENGINE A: ARAVIND'S CROSS DROP
-        const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
-        const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
-        let courtDebtPlus = 0, courtDebtLight = 0, courtDebtNone = 0;
+        const isHardCeilingActive = (actualSwipes >= totalMaxSlotsAllowed && minimumStructuralFloor === cashPaid);
 
-        if (remainingCourtCashToSplit > 0) {
-            const lightDeficit = Math.max(0, plusMaxDiscount - lightMaxDiscount);
-            const noneDeficit = plusMaxDiscount;
-            const totalDeficitPool = (lightDeficit * cLight) + (noneDeficit * cNone);
+        if (isHardCeilingActive) {
+            // Aravind mode collapses to a flat split only if court rules structurally mandate it
+            const flatSplit = (cashPaid + shuttles) / totalPlayers;
+            finalPlus = finalLight = finalNone = flatSplit;
+        } else {
+            // Standard Aravind math
+            const baseFloorPerPerson = minimumStructuralFloor / totalPlayers;
+            const remainingCourtCashToSplit = Math.max(0, cashPaid - minimumStructuralFloor);
+            let courtDebtPlus = 0, courtDebtLight = 0, courtDebtNone = 0;
 
-            if (totalDeficitPool > 0) {
-                courtDebtLight = (lightDeficit / totalDeficitPool) * remainingCourtCashToSplit;
-                courtDebtNone = (noneDeficit / totalDeficitPool) * remainingCourtCashToSplit;
-            } else {
-                courtDebtPlus = courtDebtLight = courtDebtNone = remainingCourtCashToSplit / totalPlayers;
+            if (remainingCourtCashToSplit > 0) {
+                const lightDeficit = Math.max(0, plusMaxDiscount - lightMaxDiscount);
+                const noneDeficit = plusMaxDiscount;
+                const totalDeficitPool = (lightDeficit * cLight) + (noneDeficit * cNone);
+
+                if (totalDeficitPool > 0) {
+                    courtDebtLight = (lightDeficit / totalDeficitPool) * remainingCourtCashToSplit;
+                    courtDebtNone = (noneDeficit / totalDeficitPool) * remainingCourtCashToSplit;
+                } else {
+                    courtDebtPlus = courtDebtLight = courtDebtNone = remainingCourtCashToSplit / totalPlayers;
+                }
             }
+            finalPlus = baseFloorPerPerson + courtDebtPlus + shuttleShare;
+            finalLight = baseFloorPerPerson + courtDebtLight + shuttleShare;
+            finalNone = baseFloorPerPerson + courtDebtNone + shuttleShare;
         }
-        finalPlus = baseFloorPerPerson + courtDebtPlus + shuttleShare;
-        finalLight = baseFloorPerPerson + courtDebtLight + shuttleShare;
-        finalNone = baseFloorPerPerson + courtDebtNone + shuttleShare;
-    } else {
-        // ENGINE B: LUDA'S CLEAR (Capped & Tiered)
-        const noCardRate = flatShareOfCourt;
         
-        // 1. Establish individual base tiers capped at 0.00
+    } else {
+        // ENGINE B: LUDA'S CLEAR (Completely safe from swipe overrides!)
         const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
         const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
+        const noCardRate = flatShareOfCourt;
 
-        const actualLightDiscount = flatShareOfCourt - lightCardRate;
-        const actualPlusDiscount = flatShareOfCourt - plusCardRate;
-
-        // 2. Sum up what these standard tier collections bring in
         let totalCourtCashCollected = (noCardRate * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
         
         let finalCourtPlus = plusCardRate;
         let finalCourtLight = lightCardRate;
         let finalCourtNone = noCardRate;
 
-        // 3. UNDERPAYMENT SAFETY VALVE: If base rates don't reach the real cash bill paid
+        // UNDERPAYMENT DEFICIT BALANCE
         if (totalCourtCashCollected < cashPaid) {
             const shortFall = cashPaid - totalCourtCashCollected;
             const courtDeficitShare = shortFall / totalPlayers;
             
-            // Everyone absorbs the missing receipt balance equally
             finalCourtPlus += courtDeficitShare;
             finalCourtLight += courtDeficitShare;
             finalCourtNone += courtDeficitShare;
             
-            totalCourtCashCollected = cashPaid; // Sets up clean pool for shuttle processing
+            totalCourtCashCollected = cashPaid;
         }
 
-        // 4. SURPLUS PROCESSING: Extra cash reduces shuttle costs
+        // SURPLUS PROCESSING
         const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
         const adjustedShuttlePool = Math.max(0, shuttles - surplusCash);
         const ludaShuttleShare = adjustedShuttlePool / totalPlayers;
 
-        // 5. Final Calculation Assembly
         finalPlus = finalCourtPlus + ludaShuttleShare;
         finalLight = finalCourtLight + ludaShuttleShare;
         finalNone = finalCourtNone + ludaShuttleShare;
