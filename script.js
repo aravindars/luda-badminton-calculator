@@ -74,30 +74,45 @@ function calculate() {
         finalLight = baseFloorPerPerson + courtDebtLight + shuttleShare;
         finalNone = baseFloorPerPerson + courtDebtNone + shuttleShare;
     } else {
-        // ENGINE B: LUDA'S CLEAR (Capped to Flat Share)
+        // ENGINE B: LUDA'S CLEAR (Capped & Tiered)
         const noCardRate = flatShareOfCourt;
         
-        // 1. Cap individual components at 0
+        // 1. Establish individual base tiers capped at 0.00
         const lightCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, lightMaxDiscount));
         const plusCardRate = Math.max(0, flatShareOfCourt - Math.min(flatShareOfCourt, plusMaxDiscount));
 
         const actualLightDiscount = flatShareOfCourt - lightCardRate;
         const actualPlusDiscount = flatShareOfCourt - plusCardRate;
 
-        // 2. Calculate court cash collected based on capped rates
-        const totalCourtCashCollected = (noCardRate * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
+        // 2. Sum up what these standard tier collections bring in
+        let totalCourtCashCollected = (noCardRate * cNone) + (lightCardRate * cLight) + (plusCardRate * cPlus);
         
-        // 3. FIX: Surplus cash is only what we collected OVER the cashPaid bill
+        let finalCourtPlus = plusCardRate;
+        let finalCourtLight = lightCardRate;
+        let finalCourtNone = noCardRate;
+
+        // 3. UNDERPAYMENT SAFETY VALVE: If base rates don't reach the real cash bill paid
+        if (totalCourtCashCollected < cashPaid) {
+            const shortFall = cashPaid - totalCourtCashCollected;
+            const courtDeficitShare = shortFall / totalPlayers;
+            
+            // Everyone absorbs the missing receipt balance equally
+            finalCourtPlus += courtDeficitShare;
+            finalCourtLight += courtDeficitShare;
+            finalCourtNone += courtDeficitShare;
+            
+            totalCourtCashCollected = cashPaid; // Sets up clean pool for shuttle processing
+        }
+
+        // 4. SURPLUS PROCESSING: Extra cash reduces shuttle costs
         const surplusCash = Math.max(0, totalCourtCashCollected - cashPaid);
-        
-        // 4. THE ULTIMATE BUG FIX: Force the shuttle share to cap at exactly 0.00 if covered by surplus!
         const adjustedShuttlePool = Math.max(0, shuttles - surplusCash);
         const ludaShuttleShare = adjustedShuttlePool / totalPlayers;
 
-        // 5. Final assignment (Plus will now be 0.00 court + 0.00 shuttles = 0.00 PLN!)
-        finalPlus = plusCardRate + ludaShuttleShare;
-        finalLight = lightCardRate + ludaShuttleShare;
-        finalNone = noCardRate + ludaShuttleShare;
+        // 5. Final Calculation Assembly
+        finalPlus = finalCourtPlus + ludaShuttleShare;
+        finalLight = finalCourtLight + ludaShuttleShare;
+        finalNone = finalCourtNone + ludaShuttleShare;
     }
 
     // 4. Penny Patch Rounding Balance
